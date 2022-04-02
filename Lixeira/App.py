@@ -104,7 +104,6 @@ class Application:
         self.capacity["font"] = self.fontePadrao
         self.capacity.pack(side=LEFT)
 
-
         self.confirm = Button(self.seventhContainer)
         self.confirm["text"] = "Confirm"
         self.confirm["font"] = ("Calibri", "8")
@@ -138,7 +137,7 @@ class Application:
     def createWindowsActions(self):
         newWindow = Toplevel(root)
         newWindow.title("Lixeira")
-        newWindow.geometry("400x400+100+100")
+        newWindow.geometry("400x200+100+100")
 
         self.container1 = Frame(newWindow)
         self.container1["padx"] = 30

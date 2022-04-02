@@ -1,11 +1,11 @@
 import socket
-import select, sys
+import select
+import sys
 import queue as queue
 import mysql.connector
 import json
 from mysql.connector import errorcode
 from mysql.connector import Error
-
 
 
 class Server():
@@ -14,6 +14,8 @@ class Server():
         self._host = host
         self._port = port
         self._tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._tcp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
         self._db = self.connect_mysql()
 
     def start(self):
@@ -42,6 +44,17 @@ class Server():
                     else:
                         data = sock.recv(2048)
                         msg_s = str(data.decode('utf-8'))
+
+                        headers = msg_s.split('\n')
+                        method = headers[0].split()[0]
+                        route = headers[0].split()[1]
+
+                        print("header ", headers)
+                        print("filename ", route)
+                        print("method ", method)
+
+                        response = self.api(method, route, '')
+                        '''
                         if(msg_s):
                             data_json = json.loads(msg_s)
                             if (data_json['topic'] == "lixeira"):
@@ -57,9 +70,10 @@ class Server():
                                     cursor.execute(sql, values)
                                     self._db.commit()
                                 except Exception as e:
-                                    print('Error ',e.args)    
+                                    print('Error ', e.args)
+                        '''
                         if data:
-                            message_queues[sock].put(msg_s)
+                            message_queues[sock].put(response)
                             if sock not in outputs:
                                 outputs.append(sock)
                             else:
@@ -75,7 +89,7 @@ class Server():
                     except queue.Empty:
                         outputs.remove(sock)
                     else:
-                        sock.send(bytes(str(next_msg), 'utf-8'))
+                        sock.send(bytes(next_msg, 'utf-8'))
 
                 for sock in exceptional:
                     inputs.remove(sock)
@@ -86,6 +100,19 @@ class Server():
         except Exception as e:
             print("Erro ao inicializar o servidor ", e.args)
             self._db.close()
+
+    def api(self, method, route, payload):
+        if method == "GET" and route == "/list-trash":
+            sql = "SELECT * FROM lixeira"
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql)
+                myresult = cursor.fetchall()
+                self._db.commit()
+                print(myresult)
+                return json.dumps(myresult)
+            except Exception as e:
+                print('Error ', e.args)            
 
 
     def connect_mysql(self):
