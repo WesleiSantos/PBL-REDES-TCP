@@ -1,5 +1,9 @@
 from tkinter import *
+from turtle import width
 from caminhao import Caminhao
+import json
+import threading
+import time
 
 
 class Application:
@@ -38,11 +42,13 @@ class Application:
         self.seventhContainer["pady"] = 20
         self.seventhContainer.pack()
 
-        self.title = Label(self.primaryContainer, text="Dados iniciais da caminhao")
+        self.title = Label(self.primaryContainer,
+                           text="Dados iniciais da caminhao")
         self.title["font"] = ("Arial", "10", "bold")
         self.title.pack()
 
-        self.hostLabel = Label(self.secondContainer,text="Host", font=self.fontePadrao, width=20)
+        self.hostLabel = Label(self.secondContainer,
+                               text="Host", font=self.fontePadrao, width=20)
         self.hostLabel.pack(side=LEFT)
 
         self.host = Entry(self.secondContainer)
@@ -51,7 +57,8 @@ class Application:
         self.host["font"] = self.fontePadrao
         self.host.pack(side=LEFT)
 
-        self.portLabel = Label(self.thirdContainer, text="Port", font=self.fontePadrao,  width=20)
+        self.portLabel = Label(self.thirdContainer,
+                               text="Port", font=self.fontePadrao,  width=20)
         self.portLabel.pack(side=LEFT)
 
         self.port = Entry(self.thirdContainer)
@@ -60,16 +67,18 @@ class Application:
         self.port["font"] = self.fontePadrao
         self.port.pack(side=LEFT)
 
-        self.cordXLabel = Label(self.fourthContainer, text="Coordenada inicial X", font=self.fontePadrao, width=20)
+        self.cordXLabel = Label(
+            self.fourthContainer, text="Coordenada inicial X", font=self.fontePadrao, width=20)
         self.cordXLabel.pack(side=LEFT)
-        
+
         self.cordX = Entry(self.fourthContainer)
         self.cordX.insert(0, "100")
         self.cordX["width"] = 25
         self.cordX["font"] = self.fontePadrao
         self.cordX.pack(side=LEFT)
 
-        self.cordYLabel = Label(self.fifthContainer, text="Coordenada inicial Y", font=self.fontePadrao,  width=20)
+        self.cordYLabel = Label(
+            self.fifthContainer, text="Coordenada inicial Y", font=self.fontePadrao,  width=20)
         self.cordYLabel.pack(side=LEFT)
 
         self.cordY = Entry(self.fifthContainer)
@@ -78,7 +87,8 @@ class Application:
         self.cordY["font"] = self.fontePadrao
         self.cordY.pack(side=LEFT)
 
-        self.capacityLabel = Label(self.sixthContainer, text="Capacidade (M³)", font=self.fontePadrao,  width=20)
+        self.capacityLabel = Label(
+            self.sixthContainer, text="Capacidade (M³)", font=self.fontePadrao,  width=20)
         self.capacityLabel.pack(side=LEFT)
 
         self.capacity = Entry(self.sixthContainer)
@@ -87,89 +97,103 @@ class Application:
         self.capacity["font"] = self.fontePadrao
         self.capacity.pack(side=LEFT)
 
-
         self.confirm = Button(self.seventhContainer)
         self.confirm["text"] = "Confirm"
         self.confirm["font"] = ("Calibri", "8")
         self.confirm["width"] = 12
-        self.confirm["command"] = self.createTrash
+        self.confirm["command"] = self.createGarbageTruck
         self.confirm.pack()
 
-        self.message = Label(self.seventhContainer, text="", font=self.fontePadrao)
+        self.message = Label(self.seventhContainer,
+                             text="", font=self.fontePadrao)
         self.message.pack()
 
-    #Método para criar caminhao
+    # Método para criar caminhao
+
     def createGarbageTruck(self):
-        host=self.host.get()
-        port=self.port.get()
-        cordX=self.cordX.get()
-        cordY=self.cordY.get()
-        capacity=self.capacity.get()
-       
+        host = self.host.get()
+        port = self.port.get()
+        cordX = self.cordX.get()
+        cordY = self.cordY.get()
+        capacity = self.capacity.get()
+
         try:
-            self.caminhao = Caminhao(host,int(port),int(cordX),int(cordY),int(capacity))
-            self.message["text"] =self.caminhao.start()
+            self.caminhao = Caminhao(host, int(port), int(
+                cordX), int(cordY), int(capacity))
+            self.message["text"] = self.caminhao.start()
             self.message["bg"] = "green"
             self.createWindowsActions()
 
         except Exception as e:
-                self.message["text"] = "Dados inválidos ".join(e.args)
-                self.message["bg"] = "red"
-
+            self.message["text"] = "Dados inválidos ".join(e.args)
+            self.message["bg"] = "red"
 
     def createWindowsActions(self):
-        newWindow = Toplevel(root)
-        newWindow.title("Caminhao")
-        newWindow.geometry("400x400+100+100")
+        global root
+        self.newWindow = Toplevel(root)
+        self.newWindow.title("Caminhao")
+        self.newWindow.geometry("900x400+100+100")
+        x = threading.Thread(target=self.thread_function, args=(), daemon=True)
+        x.start()
 
-        self.container1 = Frame(newWindow)
-        self.container1["padx"] = 30
-        self.container1["pady"] = 5
-        self.container1.pack()
-        self.container2 = Frame(newWindow)
-        self.container2["padx"] = 30
-        self.container2["pady"] = 5
-        self.container2.pack()
-        self.container3 = Frame(newWindow)
-        self.container3["padx"] = 30
-        self.container3["pady"] = 10
-        self.container3.pack()
+    def renderTrash(self, row, row_idx):
+        frame = Frame(
+            master=self.newWindow,
+            relief=RAISED,
+            borderwidth=1,
+            width=450, height=50
+        )
+        frame.grid(row=row_idx, column=0, columnspan=4, padx=5, pady=5)
+        orderLabel = Label(frame, text="Prioridade")
+        orderLabel.pack(side=LEFT)
+        order = Label(frame, text=str(row_idx)+"º")
+        order.pack(side=LEFT)
+        idLabel = Label(frame, text="Identificação:")
+        idLabel.pack(side=LEFT)
+        id = Label(frame, text=row[0])
+        id.pack(side=LEFT)
+        statusLabel = Label(frame, text="Status:")
+        statusLabel.pack(side=LEFT)
+        status = Label(frame, text=row[3])
+        status.pack(side=LEFT)
+        capacityLabel = Label(frame, text="Capacidade:")
+        capacityLabel.pack(side=LEFT)
+        capacity = Label(frame, text=row[4])
+        capacity.pack(side=LEFT)
+        coord_xLabel = Label(frame, text="Posição x:")
+        coord_xLabel.pack(side=LEFT)
+        coord_x = Label(frame, text=row[5])
+        coord_x.pack(side=LEFT)
+        coord_yLabel = Label(frame, text="Posição y:")
+        coord_yLabel.pack(side=LEFT)
+        coord_y = Label(frame, text=row[6])
+        coord_y.pack(side=LEFT)
+        qtd_usedLabel = Label(frame, text="Quantidade utilizada:")
+        qtd_usedLabel.pack(side=LEFT)
+        qtd_used = Label(frame, text=row[7])
+        qtd_used.pack(side=LEFT)
+        collect = Button(frame)
+        collect["text"] = "Coletar"
+        collect["font"] = ("Calibri", "8")
+        collect["width"] = 12
+        #collect["command"] = self.createGarbageTruck
+        collect.pack()
 
-        self.capacityLabel = Label(self.container1,text = "Capacidade:" , font=self.fontePadrao, width=20)
-        self.capacityLabel["font"] = ("Arial", "10", "bold")
-        self.capacityLabel.pack()
+    def setStateTrash(self):
+        data = json.dumps({"state": False, "id": 2})
+        self.caminhao.get_list_trash(data)
 
-        capacity = self.caminhao.get_capacity()
-        self.qtdCapacity = Label(self.container1,text = capacity , font=self.fontePadrao, width=10)
-        self.qtdCapacity["font"] = ("Arial", "10", "bold")
-        self.qtdCapacity.pack()
-        
+    def listTrash(self):
+        list = self.caminhao.get_list_trash('')
+        for row_idx, row in enumerate(list):
+            self.renderTrash(row, row_idx)
+        print(list)
 
-        self.qtdLabel = Label(self.container2,text = "Usado:" , font=self.fontePadrao, width=10)
-        self.qtdLabel["font"] = ("Arial", "10", "bold")
-        self.qtdLabel.pack()
+    def thread_function(self):
+        while True:
+            self.listTrash()
+            time.sleep(5)
 
-        qtd = str(self.caminhao.get_trash()) + "%"
-        self.qtdUsed = Label(self.container2,text=qtd , font=self.fontePadrao, width=10)
-        self.qtdUsed["font"] = ("Arial", "10", "bold")
-        self.qtdUsed.pack()
-
-        adcTrash = Button(self.container3, text = "+", font= self.fontePadrao, width=12)
-        adcTrash["command"] = self.adcTrash
-        adcTrash.pack(side=LEFT)
-        removeTrash = Button(self.container3, text = "-", font= self.fontePadrao, width=12)
-        removeTrash["command"] = self.removeTrash
-        removeTrash.pack(side=LEFT)
-
-    def adcTrash(self):
-        self.caminhao.set_trash(1)
-        qtd = self.caminhao.get_trash()
-        self.qtdUsed['text'] = str(qtd) + "%" 
-    
-    def removeTrash(self):
-        self.caminhao.set_trash(-1)
-        qtd = self.caminhao.get_trash()
-        self.qtdUsed['text'] = str(qtd) + "%"
 
 
 root = Tk()
