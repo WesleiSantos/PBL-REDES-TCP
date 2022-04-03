@@ -98,7 +98,7 @@ class Application:
         self.capacity.pack(side=LEFT)
 
         self.confirm = Button(self.seventhContainer)
-        self.confirm["text"] = "Confirm"
+        self.confirm["text"] = "Criar"
         self.confirm["font"] = ("Calibri", "8")
         self.confirm["width"] = 12
         self.confirm["command"] = self.createGarbageTruck
@@ -118,10 +118,12 @@ class Application:
         capacity = self.capacity.get()
 
         try:
-            self.caminhao = Caminhao(host, int(port), int(
-                cordX), int(cordY), int(capacity))
-            self.message["text"] = self.caminhao.start()
-            self.message["bg"] = "green"
+            self.caminhao = Caminhao(int(cordX), int(cordY), int(capacity))
+            self.caminhao.start(host, int(port))
+
+            '''self.message["text"] = self.caminhao.start(host, int(port))
+            self.message["bg"] = "green" '''
+
             self.createWindowsActions()
 
         except Exception as e:
@@ -176,7 +178,7 @@ class Application:
         collect["text"] = "Coletar"
         collect["font"] = ("Calibri", "8")
         collect["width"] = 12
-        #collect["command"] = self.createGarbageTruck
+        collect["command"] = lambda: [self.collect_garbage(row[0])]
         collect.pack()
 
     def setStateTrash(self):
@@ -189,11 +191,15 @@ class Application:
             self.renderTrash(row, row_idx)
         print(list)
 
+    def collect_garbage(self, id):
+        payload = json.dumps({"id":id})
+        resp = self.caminhao.collect_garbage(payload)
+        print(resp)
+
     def thread_function(self):
         while True:
             self.listTrash()
-            time.sleep(5)
-
+            time.sleep(30)
 
 
 root = Tk()
