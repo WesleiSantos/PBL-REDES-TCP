@@ -7,6 +7,7 @@ import json
 from mysql.connector import errorcode
 from mysql.connector import Error
 from types import SimpleNamespace
+from urllib.parse import parse_qs
 
 
 class Server():
@@ -58,36 +59,24 @@ class Server():
                             print("header ", headers)
                             print("filename ", route)
                             print("method ", method)
-                            if len(body) != 0:
-                                print("veioaqui")
-                                # Parse JSON into an object with attributes corresponding to dict keys.
-                                obj = json.loads(
-                                    body, object_hook=lambda d: SimpleNamespace(**d))
-                                print("body", obj)
-                                response = self.api(method, route, obj)
+                            if method == "GET":
+                                params = parse_qs(route.split('?')[1])
+                                route = route.split('?')[0]
+                                print('route', route)
+                                response = self.api(
+                                    method, route, None, params)
                             else:
-                                response = self.api(method, route, '')
+                                if len(body) != 0:
+                                    print("veioaqui")
+                                    # Parse JSON into an object with attributes corresponding to dict keys.
+                                    obj = json.loads(
+                                        body, object_hook=lambda d: SimpleNamespace(**d))
+                                    print("body", obj)
+                                    response = self.api(method, route, obj)
                         else:
                             response = "nada"
                         print("veio4")
-                        '''
-                        if(msg_s):
-                            data_json = json.loads(msg_s)
-                            if (data_json['topic'] == "lixeira"):
-                                sql = "INSERT INTO lixeira(id,host,port,status,coord_x,coord_y, capacity, qtd_used) VALUES(%s, %s,%s, %s,%s, %s,%s,%s) ON DUPLICATE KEY UPDATE host = VALUES (host),port = VALUES (port),status = VALUES (status) ,coord_x = VALUES (coord_x),coord_y = VALUES (coord_y), capacity = VALUES (capacity), qtd_used = VALUES (qtd_used)"
-                                values = (data_json['id'], data_json['host'],
-                                          data_json['port'], data_json['status'],
-                                          data_json['coords'][0],
-                                          data_json['coords'][1],
-                                          data_json['capacity'],
-                                          data_json['qtd_used'])
-                                try:
-                                    cursor = self._db.cursor()
-                                    cursor.execute(sql, values)
-                                    self._db.commit()
-                                except Exception as e:
-                                    print('Error ', e.args)
-                        '''
+
                         if data:
                             print("veio5")
                             message_queues[sock].put(response)
@@ -128,7 +117,10 @@ class Server():
             print("Erro ao inicializar o servidor ", e.args)
             self._db.close()
 
-    def api(self, method, route, payload):
+    def api(self, method, route, payload, params=None):
+        response = b"HTTP/1.1 200 OK\n\n"
+        header = 'HTTP/1.1 404 Not Found\n\n'
+        # ROUTE GET /list-trash
         if method == "GET" and route == "/list-trash":
             sql = "SELECT * FROM lixeira"
             try:
@@ -140,18 +132,68 @@ class Server():
                 return json.dumps(myresult)
             except Exception as e:
                 print('Error ', e.args)
+
+        # ROUTE POST /collect_garbage
         elif method == "POST" and route == "/collect_garbage":
             print("payload", payload.id)
-            sql="UPDATE lixeira SET qtd_used=%s WHERE id=%s;"
-            values = ('0',str(payload.id))
+            sql = "UPDATE lixeira SET qtd_used=%s WHERE id=%s;"
+            values = ('0', str(payload.id))
             try:
-                 cursor = self._db.cursor()
-                 cursor.execute(sql, values)
-                 self._db.commit()
-                 return json.dumps({"done": True})
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                self._db.commit()
+                return json.dumps({"done": True})
             except Exception as e:
-                 print('Error ', e.args)
-                 self._db.rollback()
+                print('Error ', e.args)
+                self._db.rollback()
+
+        # ROUTE POST /register-trash
+        elif method == "POST" and route == "/dumps/register-trash":
+            sql = "INSERT INTO lixeira(status,coord_x,coord_y, capacity, qtd_used) VALUES(%s,%s, %s,%s,%s) ON DUPLICATE KEY UPDATE status = VALUES (status) ,coord_x = VALUES (coord_x),coord_y = VALUES (coord_y), capacity = VALUES (capacity), qtd_used = VALUES (qtd_used)"
+            values = (payload.status,
+                      payload.coords[0],
+                      payload.coords[1],
+                      payload.capacity,
+                      payload.qtd_used)
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                self._db.commit()
+                return json.dumps({"done": True})
+            except Exception as e:
+                print('Error ', e.args)
+
+        # ROUTE POST /dumps/set-trash
+        elif method == "POST" and route == "/dumps/set-trash":
+            sql = "UPDATE lixeira SET qtd_used = %s WHERE coord_x = %s AND coord_y = %s;"
+            values = (
+                payload.qtd,
+                payload.coords[0],
+                payload.coords[1]
+            )
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                self._db.commit()
+                return json.dumps({"done": True})
+            except Exception as e:
+                print('Error ', e.args)
+
+        # ROUTE GET /dumps/status
+        elif method == "GET" and route == "/dumps/status":
+            sql = "SELECT status, qtd_used FROM lixeira WHERE coord_x = %s AND coord_y = %s;"
+            values = (
+                params.get('coord_x')[0],
+                params.get('coord_y')[0]
+            )
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                myresult = cursor.fetchone()
+                self._db.commit()
+                return json.dumps({"status": myresult[0], "qtd_used": myresult[1]})
+            except Exception as e:
+                print('Error ', e.args)
 
     def connect_mysql(self):
         try:
