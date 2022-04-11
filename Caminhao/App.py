@@ -8,6 +8,7 @@ import time
 
 class Application:
     def __init__(self, master=None):
+        self.frame = Frame()
         self.fontePadrao = ("Arial", "10")
         self.primaryContainer = Frame(master)
         self.primaryContainer["pady"] = 10
@@ -136,73 +137,66 @@ class Application:
         self.newWindow = Toplevel(root)
         self.newWindow.title("Caminhao")
         self.newWindow.geometry("900x400+100+100")
-        x = threading.Thread(target=self.thread_function, args=(), daemon=True)
-        x.start()
+        self.listTrash()
 
-    def renderTrash(self, row, row_idx):
-        frame = Frame(
+    def renderTrash(self, trash):
+        self.frame = Frame(
             master=self.newWindow,
             relief=RAISED,
             borderwidth=1,
             width=500, height=50
         )
-        frame.grid(row=row_idx, column=0, columnspan=4, padx=5, pady=5)
-        orderLabel = Label(frame, text="Prioridade")
+        self.frame.grid(row=1, column=0, columnspan=4, padx=5, pady=5)
+        orderLabel = Label(self.frame, text="Prioridade")
         orderLabel.pack(side=LEFT)
-        order = Label(frame, text=str(row_idx)+"º")
+        order = Label(self.frame, text=str(1)+"º")
         order.pack(side=LEFT)
-        statusLabel = Label(frame, text="Status:")
+        statusLabel = Label(self.frame, text="Status:")
         statusLabel.pack(side=LEFT)
-        status = Label(frame, text='', width=5, padx=5)
-        if bool(row[3]):
+        status = Label(self.frame, text='', width=5, padx=5)
+        if bool(trash[3]):
             status["bg"] = 'green'
         else:
             status["bg"] = 'red'
         status.pack(side=LEFT)
-        capacityLabel = Label(frame, text="Capacidade:")
+        capacityLabel = Label(self.frame, text="Capacidade:")
         capacityLabel.pack(side=LEFT)
-        capacity = Label(frame, text=row[6], padx=5)
+        capacity = Label(self.frame, text=trash[6], padx=5)
         capacity.pack(side=LEFT)
-        coord_xLabel = Label(frame, text="Posição x:")
+        coord_xLabel = Label(self.frame, text="Posição x:")
         coord_xLabel.pack(side=LEFT)
-        coord_x = Label(frame, text=row[4], padx=5)
+        coord_x = Label(self.frame, text=trash[4], padx=5)
         coord_x.pack(side=LEFT)
-        coord_yLabel = Label(frame, text="Posição y:")
+        coord_yLabel = Label(self.frame, text="Posição y:")
         coord_yLabel.pack(side=LEFT)
-        coord_y = Label(frame, text=row[5], padx=5)
+        coord_y = Label(self.frame, text=trash[5], padx=5)
         coord_y.pack(side=LEFT)
-        qtd_usedLabel = Label(frame, text="Quantidade utilizada:")
+        qtd_usedLabel = Label(self.frame, text="Quantidade utilizada:")
         qtd_usedLabel.pack(side=LEFT)
-        qtd_used = Label(frame, text=str(row[7])+'%', padx=5)
+        qtd_used = Label(self.frame, text=str(trash[7])+'%', padx=5)
         qtd_used.pack(side=LEFT)
-        if row_idx == 0:
-            collect = Button(frame)
-            collect["text"] = "Coletar"
-            collect["font"] = ("Calibri", "8")
-            collect["width"] = 18
-            collect["command"] = lambda: [
-                self.collect_garbage((row[4], row[5]))]
-            collect.pack()
-
-    def setStateTrash(self):
-        data = json.dumps({"state": False, "id": 2})
-        self.caminhao.get_list_trash(data)
+   
+        collect = Button(self.frame)
+        collect["text"] = "Coletar"
+        collect["font"] = ("Calibri", "8")
+        collect["width"] = 18
+        collect["command"] = lambda: [
+            self.collect_garbage((trash[4], trash[5]))]
+        collect.pack()
 
     def listTrash(self):
-        list = self.caminhao.get_list_trash()
-        for row_idx, row in enumerate(list):
-            self.renderTrash(row, row_idx)
-        print(list)
+        trash = self.caminhao.trash
+        print("trash",trash)
+        print("id",trash[0])
+        self.frame.destroy()
+        self.renderTrash(trash)
+       
 
     def collect_garbage(self, coord):
-        payload = json.dumps({"coord": coord})
+        payload = json.dumps({"coord": coord, "id":self.caminhao.trash[0]})
         resp = self.caminhao.collect_garbage(payload)
+        self.listTrash()
         print(resp)
-
-    def thread_function(self):
-        while True:
-            self.listTrash()
-            time.sleep(10)
 
 
 root = Tk()
