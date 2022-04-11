@@ -1,6 +1,7 @@
 from tkinter import *
+from tkinter import messagebox
 from turtle import width
-from caminhao import Caminhao
+from admin import Admin
 import json
 import threading
 import time
@@ -23,27 +24,12 @@ class Application:
         self.thirdContainer["pady"] = 10
         self.thirdContainer.pack()
 
-        self.fourthContainer = Frame(master)
-        self.fourthContainer["padx"] = 20
-        self.fourthContainer["pady"] = 10
-        self.fourthContainer.pack()
-
-        self.fifthContainer = Frame(master)
-        self.fifthContainer["padx"] = 20
-        self.fifthContainer["pady"] = 10
-        self.fifthContainer.pack()
-
-        self.sixthContainer = Frame(master)
-        self.sixthContainer["padx"] = 20
-        self.sixthContainer["pady"] = 10
-        self.sixthContainer.pack()
-
         self.seventhContainer = Frame(master)
         self.seventhContainer["pady"] = 20
         self.seventhContainer.pack()
 
         self.title = Label(self.primaryContainer,
-                           text="Dados iniciais da caminhao")
+                           text="Conectar painel admistrativo")
         self.title["font"] = ("Arial", "10", "bold")
         self.title.pack()
 
@@ -67,81 +53,37 @@ class Application:
         self.port["font"] = self.fontePadrao
         self.port.pack(side=LEFT)
 
-        self.cordXLabel = Label(
-            self.fourthContainer, text="Coordenada inicial X", font=self.fontePadrao, width=20)
-        self.cordXLabel.pack(side=LEFT)
-
-        self.cordX = Entry(self.fourthContainer)
-        self.cordX.insert(0, "100")
-        self.cordX["width"] = 25
-        self.cordX["font"] = self.fontePadrao
-        self.cordX.pack(side=LEFT)
-
-        self.cordYLabel = Label(
-            self.fifthContainer, text="Coordenada inicial Y", font=self.fontePadrao,  width=20)
-        self.cordYLabel.pack(side=LEFT)
-
-        self.cordY = Entry(self.fifthContainer)
-        self.cordY.insert(0, "100")
-        self.cordY["width"] = 25
-        self.cordY["font"] = self.fontePadrao
-        self.cordY.pack(side=LEFT)
-
-        self.capacityLabel = Label(
-            self.sixthContainer, text="Capacidade (M³)", font=self.fontePadrao,  width=20)
-        self.capacityLabel.pack(side=LEFT)
-
-        self.capacity = Entry(self.sixthContainer)
-        self.capacity.insert(0, "100")
-        self.capacity["width"] = 25
-        self.capacity["font"] = self.fontePadrao
-        self.capacity.pack(side=LEFT)
-
         self.confirm = Button(self.seventhContainer)
         self.confirm["text"] = "Criar"
         self.confirm["font"] = ("Calibri", "8")
         self.confirm["width"] = 12
-        self.confirm["command"] = self.createGarbageTruck
+        self.confirm["command"] = self.startAdmin
         self.confirm.pack()
 
         self.message = Label(self.seventhContainer,
                              text="", font=self.fontePadrao)
         self.message.pack()
 
-    # Método para criar caminhao
-    def createGarbageTruck(self):
+    # Método para criar admin
+    def startAdmin(self):
         host = self.host.get()
         port = self.port.get()
-        cordX = self.cordX.get()
-        cordY = self.cordY.get()
-        capacity = self.capacity.get()
 
         try:
-            self.caminhao = Caminhao(int(cordX), int(cordY), int(capacity))
-            resp = self.caminhao.register(host, int(port))
-            if resp.done:
-                self.message["text"] = "Registrada com sucesso!"
-                self.message["bg"] = "green"
-                self.createWindowsActions()
-            else:
-                self.message["text"] = "Falha ao registrar!"
-                self.message["bg"] = "red"
+            self.admin = Admin()
+            self.admin.start(host, int(port))
+            x = threading.Thread(target=self.thread_function, args=(), daemon=True)
+            x.start()
 
         except Exception as e:
             self.message["text"] = "Dados inválidos ".join(e.args)
             self.message["bg"] = "red"
-
-    def createWindowsActions(self):
-        global root
-        self.newWindow = Toplevel(root)
-        self.newWindow.title("Caminhao")
-        self.newWindow.geometry("900x400+100+100")
-        x = threading.Thread(target=self.thread_function, args=(), daemon=True)
-        x.start()
+        
 
     def renderTrash(self, row, row_idx):
+
         frame = Frame(
-            master=self.newWindow,
+            master=root,
             relief=RAISED,
             borderwidth=1,
             width=500, height=50
@@ -154,49 +96,68 @@ class Application:
         statusLabel = Label(frame, text="Status:")
         statusLabel.pack(side=LEFT)
         status = Label(frame, text='', width=5, padx=5)
-        if bool(row[3]):
+        if bool(row[2]):
             status["bg"] = 'green'
         else:
             status["bg"] = 'red'
         status.pack(side=LEFT)
         capacityLabel = Label(frame, text="Capacidade:")
         capacityLabel.pack(side=LEFT)
-        capacity = Label(frame, text=row[6], padx=5)
+        capacity = Label(frame, text=row[5], padx=5)
         capacity.pack(side=LEFT)
         coord_xLabel = Label(frame, text="Posição x:")
         coord_xLabel.pack(side=LEFT)
-        coord_x = Label(frame, text=row[4], padx=5)
+        coord_x = Label(frame, text=row[3], padx=5)
         coord_x.pack(side=LEFT)
         coord_yLabel = Label(frame, text="Posição y:")
         coord_yLabel.pack(side=LEFT)
-        coord_y = Label(frame, text=row[5], padx=5)
+        coord_y = Label(frame, text=row[4], padx=5)
         coord_y.pack(side=LEFT)
         qtd_usedLabel = Label(frame, text="Quantidade utilizada:")
         qtd_usedLabel.pack(side=LEFT)
-        qtd_used = Label(frame, text=str(row[7])+'%', padx=5)
+        qtd_used = Label(frame, text=str(row[6])+'%', padx=5)
         qtd_used.pack(side=LEFT)
-        if row_idx == 0:
-            collect = Button(frame)
-            collect["text"] = "Coletar"
-            collect["font"] = ("Calibri", "8")
-            collect["width"] = 18
-            collect["command"] = lambda: [
-                self.collect_garbage((row[4], row[5]))]
-            collect.pack()
+        collect = Button(frame)
+        collect["text"] = "Coletar"
+        collect["font"] = ("Calibri", "8")
+        collect["width"] = 18
+        collect["command"] = lambda: [self.collect_garbage((row[3], row[4]))]
+        collect.pack()
+        collect = Button(frame)
+        collect["text"] = "Bloquear/Desbloquear"
+        collect["font"] = ("Calibri", "8")
+        collect["width"] = 18
+        collect["command"] = lambda: [
+            self.admin.update_state((row[3], row[4], not bool(row[2])))]
+        collect.pack()
 
     def setStateTrash(self):
         data = json.dumps({"state": False, "id": 2})
-        self.caminhao.get_list_trash(data)
+        self.admin.get_list_trash(data)
 
     def listTrash(self):
-        list = self.caminhao.get_list_trash()
-        for row_idx, row in enumerate(list):
-            self.renderTrash(row, row_idx)
-        print(list)
+        try:
+            self.primaryContainer.destroy()
+            self.secondContainer.destroy()
+            self.thirdContainer.destroy()
+            self.seventhContainer.destroy()
+            list = self.admin.get_list_trash()
+            for row_idx, row in enumerate(list):
+                self.renderTrash(row, row_idx)
+            print(list)
+            
+        except Exception as e:
+            self.error(e.args)
+
+    def error(self,error):
+        messagebox.showerror("Title", "Erro na comunicação! "+str(error))
+
+
+        
 
     def collect_garbage(self, coord):
         payload = json.dumps({"coord": coord})
-        resp = self.caminhao.collect_garbage(payload)
+        resp = self.admin.collect_garbage(payload)
         print(resp)
 
     def thread_function(self):
@@ -206,7 +167,7 @@ class Application:
 
 
 root = Tk()
-root.title("caminhao")
-root.geometry("400x400+100+100")
+root.title("admin")
+root.geometry("900x400+100+100")
 Application(root)
 root.mainloop()

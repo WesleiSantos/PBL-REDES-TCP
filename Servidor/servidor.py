@@ -8,6 +8,9 @@ from mysql.connector import errorcode
 from mysql.connector import Error
 from types import SimpleNamespace
 from urllib.parse import parse_qs
+from math import sqrt
+import functools
+
 
 
 class Server():
@@ -135,9 +138,8 @@ class Server():
 
         # ROUTE POST /collect_garbage
         elif method == "POST" and route == "/collect_garbage":
-            print("payload", payload.id)
-            sql = "UPDATE lixeira SET qtd_used=%s WHERE id=%s;"
-            values = ('0', str(payload.id))
+            sql = "UPDATE lixeira SET qtd_used=%s WHERE coord_x = %s AND coord_y = %s;"
+            values = ('0', str(payload.coord[0]), str(payload.coord[1]))
             try:
                 cursor = self._db.cursor()
                 cursor.execute(sql, values)
@@ -155,6 +157,25 @@ class Server():
                       payload.coords[1],
                       payload.capacity,
                       payload.qtd_used)
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                self._db.commit()
+                return json.dumps({"done": True})
+            except Exception as e:
+                print('Error ', e.args)
+
+        # ROUTE POST /register-garbage-truck
+        elif method == "POST" and route == "/register-garbage-truck":
+            trash = self.next_trash(payload.coords)
+            sql = "INSERT INTO caminhao(status,coord_x,coord_y, capacity, qtd_used, next_trash) VALUES(%s,%s, %s,%s,%s, %s) ON DUPLICATE KEY UPDATE status = VALUES (status) ,coord_x = VALUES (coord_x),coord_y = VALUES (coord_y), capacity = VALUES (capacity), qtd_used = VALUES (qtd_used), next_trash = VALUES (next_trash)"
+            values = (payload.status,
+                      payload.coords[0],
+                      payload.coords[1],
+                      payload.capacity,
+                      payload.qtd_used,
+                      trash
+                      )
             try:
                 cursor = self._db.cursor()
                 cursor.execute(sql, values)
@@ -194,6 +215,51 @@ class Server():
                 return json.dumps({"status": myresult[0], "qtd_used": myresult[1]})
             except Exception as e:
                 print('Error ', e.args)
+
+        # ROUTE POST /dumps/status
+        elif method == "POST" and route == "/dumps/status":
+            sql = "UPDATE lixeira SET status = %s WHERE coord_x = %s AND coord_y = %s;"
+            values = (
+                payload.status,
+                payload.coord_x,
+                payload.coord_y
+            )
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                self._db.commit()
+                return json.dumps({"done": True})
+            except Exception as e:
+                print('Error ', e.args)
+
+    def comp(item): # primeiro item em ordem decrescente, segundo em ordem crescente
+       print("veio comp")
+       return -item[8], item[7]
+
+
+    def next_trash(self, dist):
+        sql = "SELECT * FROM lixeira"
+        try:
+            cursor = self._db.cursor()
+            cursor.execute(sql)
+            myresult = cursor.fetchall()
+            self._db.commit()
+            print(myresult)
+            list_trash = list()
+            for trash in myresult:
+                trash = list(trash)
+                # Calculando a distância
+                print(dist[0], dist[1],trash[4],trash[5])
+                distXY = sqrt((int(dist[0])-int(trash[4]))**2) + ((int(dist[1])-int(trash[5]))**2)
+                print("dist: ",distXY)
+                trash.append(distXY)
+                list_trash.append(trash)
+            print(list_trash)
+            sortedLista = sorted(list_trash, key= lambda item:(-item[8], item[7]))
+            print("sortlist: ", sortedLista[0])
+            return sortedLista[0][0]
+        except Exception as e:
+            print('Error ', e.args)
 
     def connect_mysql(self):
         try:

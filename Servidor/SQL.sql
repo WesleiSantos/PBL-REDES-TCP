@@ -1,4 +1,5 @@
 CREATE TABLE `lixeira` (
+  `id` INT NOT NULL AUTO_INCREMENT,
   `host` VARCHAR(30),
   `port` INT,
   `status` BOOLEAN NOT NULL, 
