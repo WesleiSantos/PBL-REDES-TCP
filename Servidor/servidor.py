@@ -12,7 +12,6 @@ from math import sqrt
 import functools
 
 
-
 class Server():
 
     def __init__(self, host, port):
@@ -144,7 +143,8 @@ class Server():
                 cursor = self._db.cursor()
                 cursor.execute(sql, values)
                 self._db.commit()
-                return json.dumps({"done": True})
+                trash = self.update_next_trahs(payload.coord, payload.id)
+                return json.dumps({"done": True, "next_trash": trash})
             except Exception as e:
                 print('Error ', e.args)
                 self._db.rollback()
@@ -174,13 +174,14 @@ class Server():
                       payload.coords[1],
                       payload.capacity,
                       payload.qtd_used,
-                      trash
+                      trash[0]
                       )
             try:
                 cursor = self._db.cursor()
                 cursor.execute(sql, values)
+                garbage_truck = cursor.lastrowid
                 self._db.commit()
-                return json.dumps({"done": True})
+                return json.dumps({"done": True, "trash": trash})
             except Exception as e:
                 print('Error ', e.args)
 
@@ -232,10 +233,22 @@ class Server():
             except Exception as e:
                 print('Error ', e.args)
 
-    def comp(item): # primeiro item em ordem decrescente, segundo em ordem crescente
-       print("veio comp")
-       return -item[8], item[7]
+    def comp(item):  # primeiro item em ordem decrescente, segundo em ordem crescente
+        print("veio comp")
+        return -item[8], item[7]
 
+    def update_next_trahs(self, coords, id):
+        trash = self.next_trash(coords)
+        sql = "UPDATE caminhao SET next_trash=%s WHERE id=%s;"
+        values = (str(trash[0]), str(id))
+        try:
+            cursor = self._db.cursor()
+            cursor.execute(sql, values)
+            self._db.commit()
+            return trash
+        except Exception as e:
+            print('Error ', e.args)
+            self._db.rollback()
 
     def next_trash(self, dist):
         sql = "SELECT * FROM lixeira"
@@ -249,15 +262,17 @@ class Server():
             for trash in myresult:
                 trash = list(trash)
                 # Calculando a distância
-                print(dist[0], dist[1],trash[4],trash[5])
-                distXY = sqrt((int(dist[0])-int(trash[4]))**2) + ((int(dist[1])-int(trash[5]))**2)
-                print("dist: ",distXY)
+                print(dist[0], dist[1], trash[4], trash[5])
+                distXY = sqrt((int(dist[0])-int(trash[4]))
+                              ** 2) + ((int(dist[1])-int(trash[5]))**2)
+                print("dist: ", distXY)
                 trash.append(distXY)
                 list_trash.append(trash)
             print(list_trash)
-            sortedLista = sorted(list_trash, key= lambda item:(-item[8], item[7]))
+            sortedLista = sorted(
+                list_trash, key=lambda item: (-item[8], item[7]))
             print("sortlist: ", sortedLista[0])
-            return sortedLista[0][0]
+            return sortedLista[0]
         except Exception as e:
             print('Error ', e.args)
 
