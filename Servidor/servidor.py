@@ -228,6 +228,23 @@ class Server():
             except Exception as e:
                 print('Error ', e.args)
 
+        
+        # ROUTE GET /truck
+        elif method == "GET" and route == "/truck":
+            sql = "SELECT * FROM caminhao WHERE id = %s;"
+            values = (
+                params.get('id')[0],
+            )
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                myresult = cursor.fetchone()
+                self._db.commit()
+                print(myresult)
+                return json.dumps({"Done": True, "truck": myresult})
+            except Exception as e:
+                print('Error ', e.args)
+
         # ROUTE POST /truck/register
         elif method == "POST" and route == "/truck/register":
             trash = self.next_trash(payload.coords)
@@ -289,6 +306,20 @@ class Server():
                 cursor.execute(sql, values)
                 self._db.commit()
                 return json.dumps({"Done": True, "next_trash": trash})
+            except Exception as e:
+                print('Error ', e.args)
+                self._db.rollback()
+        
+        # ROUTE POST /truck/unload
+        elif method == "POST" and route == "/truck/unload":
+            sql = "UPDATE caminhao SET qtd_used=%s WHERE id=%s;"
+            values = ('0', str(payload.id))
+            print(values)
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                self._db.commit()
+                return json.dumps({"Done": True})
             except Exception as e:
                 print('Error ', e.args)
                 self._db.rollback()

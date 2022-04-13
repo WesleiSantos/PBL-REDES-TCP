@@ -124,7 +124,7 @@ class Application:
         collect["text"] = "Setar coleta"
         collect["font"] = ("Calibri", "8")
         collect["width"] = 18
-        collect["command"] = lambda: [self.admin.set_trunck({"id": row[0]})]
+        collect["command"] = lambda: [self.setTruck(row[0], row[3])]
         collect.pack()
         collect = Button(frame)
         collect["text"] = "Bloquear/Desbloquear"
@@ -177,15 +177,15 @@ class Application:
         data = json.dumps({"state": False, "id": 2})
         self.admin.get_list_trash(data)
 
+    def setTruck(self, id, status):
+        if status:
+            self.admin.set_trunck({"id": id})
+        else:
+            self.alert("Lixeira bloqueada!")
+
     def listTrash(self):
         try:
-            self.primaryContainer.destroy()
-            self.secondContainer.destroy()
-            self.thirdContainer.destroy()
-            self.seventhContainer.destroy()
-            self.frameMaster.destroy()
-            self.frameMaster = Frame(root)
-            self.frameMaster.pack()
+            self.destroyContainers()
             frame = Frame(
                 master=self.frameMaster,
                 relief=RAISED,
@@ -217,12 +217,35 @@ class Application:
             list_truck = self.admin.get_list_truck()
             for row_idx, row in enumerate(list_truck):
                 self.renderTruck(row, row_idx+count)
+                count = count + 2
+            
+            newFrame = Frame(self.frameMaster)
+            newFrame.grid(row=count+2, column=0, columnspan=4, padx=5, pady=5)
+            self.exit = Button(newFrame)
+            self.exit["text"] = "Sair"
+            self.exit["font"] = ("Calibri", "8")
+            self.exit["width"] = 12
+            self.exit["command"] = lambda: [root.destroy()]
+            self.exit.pack()
+
 
         except Exception as e:
             self.error(e.args)
 
+    def destroyContainers(self):
+        self.primaryContainer.destroy()
+        self.secondContainer.destroy()
+        self.thirdContainer.destroy()
+        self.seventhContainer.destroy()
+        self.frameMaster.destroy()
+        self.frameMaster = Frame(root)
+        self.frameMaster.pack()
+
     def error(self, error):
         messagebox.showerror("Title", "Erro na comunicação! "+str(error))
+
+    def alert(self, error):
+        messagebox.showwarning("Title", str(error))
 
     def collect_garbage(self, coord):
         payload = json.dumps({"coord": coord})

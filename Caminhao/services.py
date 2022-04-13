@@ -29,7 +29,7 @@ class Services:
             return resp
         except Exception as e:
             print("Error ao realizar a comunicação com o servidor. ", e.args)
-            exit()
+            raise "Error ao realizar a comunicação com o servidor. "
 
     def POST(self, route, body):
         try:
@@ -53,3 +53,4 @@ class Services:
             return resp_json
         except Exception as e:
             print("Error ao realizar a comunicação com o servidor. ", e.args)
+            raise "Error ao realizar a comunicação com o servidor. "

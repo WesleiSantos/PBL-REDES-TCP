@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 from turtle import width
 from caminhao import Caminhao
 import json
@@ -9,6 +10,9 @@ import time
 class Application:
     def __init__(self, master=None):
         self.frame = Frame()
+        self.infoFrame = Frame()
+        self.titleFrame = Frame()
+        self.titleTrashFrame = Frame()
         self.fontePadrao = ("Arial", "10")
         self.primaryContainer = Frame(master)
         self.primaryContainer["pady"] = 10
@@ -73,7 +77,7 @@ class Application:
         self.cordXLabel.pack(side=LEFT)
 
         self.cordX = Entry(self.fourthContainer)
-        self.cordX.insert(0, "100")
+        self.cordX.insert(0, "0")
         self.cordX["width"] = 25
         self.cordX["font"] = self.fontePadrao
         self.cordX.pack(side=LEFT)
@@ -83,7 +87,7 @@ class Application:
         self.cordYLabel.pack(side=LEFT)
 
         self.cordY = Entry(self.fifthContainer)
-        self.cordY.insert(0, "100")
+        self.cordY.insert(0, "0")
         self.cordY["width"] = 25
         self.cordY["font"] = self.fontePadrao
         self.cordY.pack(side=LEFT)
@@ -133,21 +137,38 @@ class Application:
             self.message["bg"] = "red"
 
     def createWindowsActions(self):
-        global root
-        self.newWindow = Toplevel(root)
-        self.newWindow.title("Caminhao")
-        self.newWindow.geometry("900x400+100+100")
+        self.destroyContainers()
+        root.geometry("900x250+100+100")
         x = threading.Thread(target=self.thread_function, args=(), daemon=True)
         x.start()
 
+    def destroyContainers(self):
+        self.primaryContainer.destroy()
+        self.secondContainer.destroy()
+        self.thirdContainer.destroy()
+        self.fourthContainer.destroy()
+        self.fifthContainer.destroy()
+        self.sixthContainer.destroy()
+        self.seventhContainer.destroy()
+
     def renderTrash(self, trash):
+        
+        self.titleTrashFrame = Frame(master=root,
+                           relief=RAISED,
+                           borderwidth=1,
+                           width=500, height=50)
+        self.titleTrashFrame.grid(row=3, column=0, columnspan=4, padx=5, pady=5)
+        title = Label(self.titleTrashFrame,
+                      text="Informações da próxima lixeira")
+        title["font"] = ("Arial", "10", "bold")
+        title.pack()
         self.frame = Frame(
-            master=self.newWindow,
+            master=root,
             relief=RAISED,
             borderwidth=1,
             width=500, height=50
         )
-        self.frame.grid(row=1, column=0, columnspan=4, padx=5, pady=5)
+        self.frame.grid(row=4, column=0, columnspan=4, padx=5, pady=5)
         orderLabel = Label(self.frame, text="Prioridade")
         orderLabel.pack(side=LEFT)
         order = Label(self.frame, text=str(1)+"º")
@@ -176,13 +197,13 @@ class Application:
         qtd_usedLabel.pack(side=LEFT)
         qtd_used = Label(self.frame, text=str(trash[7])+'%', padx=5)
         qtd_used.pack(side=LEFT)
-   
+
         collect = Button(self.frame)
         collect["text"] = "Coletar"
         collect["font"] = ("Calibri", "8")
         collect["width"] = 18
         collect["command"] = lambda: [
-            self.collect_garbage((trash[4], trash[5]))]
+            self.collect_garbage(trash[3], (trash[4], trash[5]))]
         collect.pack()
 
         collect = Button(self.frame)
@@ -193,17 +214,82 @@ class Application:
             self.next_garbage()]
         collect.pack()
 
-    def listTrash(self, trash):
-        print("trash",trash)
-        print("id",trash[0])
-        self.frame.destroy()
-        self.renderTrash(trash)
-       
+    def renderInfoTruck(self):
+        self.titleFrame = Frame(master=root,
+                           relief=RAISED,
+                           borderwidth=1,
+                           width=500, height=50)
+        self.titleFrame.grid(row=1, column=0, columnspan=4, padx=5, pady=5)
+        title = Label(self.titleFrame,
+                      text="Informações do caminhão")
+        title["font"] = ("Arial", "10", "bold")
+        title.pack()
+        self.infoFrame = Frame(
+            master=root,
+            relief=RAISED,
+            borderwidth=1,
+            width=500, height=50
+        )
+        self.infoFrame.grid(row=2, column=0, columnspan=4, padx=5, pady=5)
+        capacityLabel = Label(self.infoFrame, text="Capacidade:")
+        capacityLabel.pack(side=LEFT)
+        capacity = Label(
+            self.infoFrame, text=self.caminhao.get_capacity(), padx=5)
+        capacity.pack(side=LEFT)
+        coord_xLabel = Label(self.infoFrame, text="Posição x:")
+        coord_xLabel.pack(side=LEFT)
+        coord_x = Label(
+            self.infoFrame, text=self.caminhao.get_coords()[0], padx=5)
+        coord_x.pack(side=LEFT)
+        coord_yLabel = Label(self.infoFrame, text="Posição y:")
+        coord_yLabel.pack(side=LEFT)
+        coord_y = Label(
+            self.infoFrame, text=self.caminhao.get_coords()[1], padx=5)
+        coord_y.pack(side=LEFT)
+        qtd_usedLabel = Label(self.infoFrame, text="Quantidade utilizada:")
+        qtd_usedLabel.pack(side=LEFT)
+        qtd_used = Label(self.infoFrame, text=str(
+            self.caminhao.get_qtd_used())+'%', padx=5)
+        qtd_used.pack(side=LEFT)
+        unload = Button(self.infoFrame)
+        unload["text"] = "Descarregar"
+        unload["font"] = ("Calibri", "8")
+        unload["width"] = 12
+        unload["command"] = lambda: [self.caminhao.unload_truck()]
+        unload.pack(side=LEFT)
 
-    def collect_garbage(self, coord):
+    def listTrash(self, trash):
+        print("trash", trash)
+        print("id", trash[0])
+        self.frame.destroy()
+        self.infoFrame.destroy()
+        self.titleFrame.destroy()
+        self.titleTrashFrame.destroy()
+        self.renderInfoTruck()
+        self.renderTrash(trash)
+
+        exitFrame = Frame(root)
+        exitFrame.grid(row=5, column=0, columnspan=4, padx=5, pady=5)
+        self.exit = Button(exitFrame)
+        self.exit["text"] = "Sair"
+        self.exit["font"] = ("Calibri", "8")
+        self.exit["width"] = 12
+        self.exit["command"] = lambda: [root.destroy()]
+        self.exit.pack()
+
+    def collect_garbage(self, status, coord):
         payload = json.dumps({"coord": coord})
-        resp = self.caminhao.collect_garbage(payload)
-        print(resp)
+        if status:
+            resp = self.caminhao.collect_garbage(payload)
+            print(resp)
+        else:
+            self.alert("Lixeira bloqueada!")
+
+    def error(self, error):
+        messagebox.showerror("Atenção", "Erro na comunicação! "+str(error))
+
+    def alert(self, error):
+        messagebox.showwarning("Title", str(error))
 
     def next_garbage(self):
         trash = self.caminhao.next_garbage()
@@ -211,13 +297,17 @@ class Application:
 
     def thread_function(self):
         while True:
-            trash = self.caminhao.status_trash()
-            self.listTrash(trash)
+            try:
+                trash = self.caminhao.status_trash()
+                self.listTrash(trash)
+                self.caminhao.updateState()
+            except Exception as e:
+                self.error(e.args)
             time.sleep(10)
 
 
 root = Tk()
 root.title("caminhao")
-root.geometry("400x400+100+100")
+root.geometry("900x400+100+100")
 Application(root)
 root.mainloop()
