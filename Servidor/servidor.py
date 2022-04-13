@@ -122,6 +122,7 @@ class Server():
     def api(self, method, route, payload, params=None):
         response = b"HTTP/1.1 200 OK\n\n"
         header = 'HTTP/1.1 404 Not Found\n\n'
+
         # ROUTE GET /list-trash
         if method == "GET" and route == "/list-trash":
             sql = "SELECT * FROM lixeira"
@@ -135,21 +136,34 @@ class Server():
             except Exception as e:
                 print('Error ', e.args)
 
-        # ROUTE POST /collect_garbage
-        elif method == "POST" and route == "/collect_garbage":
-            sql = "UPDATE lixeira SET qtd_used=%s WHERE coord_x = %s AND coord_y = %s;"
-            values = ('0', str(payload.coord[0]), str(payload.coord[1]))
+        # ROUTE GET /list-truck
+        if method == "GET" and route == "/list-truck":
+            sql = "SELECT * FROM caminhao"
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql)
+                myresult = cursor.fetchall()
+                self._db.commit()
+                print(myresult)
+                return json.dumps(myresult)
+            except Exception as e:
+                print('Error ', e.args)
+
+        # ROUTE POST /set-truck
+        elif method == "POST" and route == "/set-truck":
+            sql = "UPDATE caminhao SET next_trash = %s;"
+            values = (str(payload.id),)
+            print(sql)
             try:
                 cursor = self._db.cursor()
                 cursor.execute(sql, values)
                 self._db.commit()
-                trash = self.update_next_trahs(payload.coord, payload.id)
-                return json.dumps({"done": True, "next_trash": trash})
+                return json.dumps({"done": True})
             except Exception as e:
                 print('Error ', e.args)
-                self._db.rollback()
 
-        # ROUTE POST /register-trash
+
+        # ROUTE POST /dumps/register-trash
         elif method == "POST" and route == "/dumps/register-trash":
             sql = "INSERT INTO lixeira(status,coord_x,coord_y, capacity, qtd_used) VALUES(%s,%s, %s,%s,%s) ON DUPLICATE KEY UPDATE status = VALUES (status) ,coord_x = VALUES (coord_x),coord_y = VALUES (coord_y), capacity = VALUES (capacity), qtd_used = VALUES (qtd_used)"
             values = (payload.status,
@@ -162,26 +176,6 @@ class Server():
                 cursor.execute(sql, values)
                 self._db.commit()
                 return json.dumps({"done": True})
-            except Exception as e:
-                print('Error ', e.args)
-
-        # ROUTE POST /register-garbage-truck
-        elif method == "POST" and route == "/register-garbage-truck":
-            trash = self.next_trash(payload.coords)
-            sql = "INSERT INTO caminhao(status,coord_x,coord_y, capacity, qtd_used, next_trash) VALUES(%s,%s, %s,%s,%s, %s) ON DUPLICATE KEY UPDATE status = VALUES (status) ,coord_x = VALUES (coord_x),coord_y = VALUES (coord_y), capacity = VALUES (capacity), qtd_used = VALUES (qtd_used), next_trash = VALUES (next_trash)"
-            values = (payload.status,
-                      payload.coords[0],
-                      payload.coords[1],
-                      payload.capacity,
-                      payload.qtd_used,
-                      trash[0]
-                      )
-            try:
-                cursor = self._db.cursor()
-                cursor.execute(sql, values)
-                garbage_truck = cursor.lastrowid
-                self._db.commit()
-                return json.dumps({"done": True, "trash": trash})
             except Exception as e:
                 print('Error ', e.args)
 
@@ -225,6 +219,7 @@ class Server():
                 payload.coord_x,
                 payload.coord_y
             )
+            print("payload: ", payload)
             try:
                 cursor = self._db.cursor()
                 cursor.execute(sql, values)
@@ -233,22 +228,74 @@ class Server():
             except Exception as e:
                 print('Error ', e.args)
 
+        # ROUTE POST /truck/register
+        elif method == "POST" and route == "/truck/register":
+            trash = self.next_trash(payload.coords)
+            sql = "INSERT INTO caminhao(status,coord_x,coord_y, capacity, qtd_used, next_trash) VALUES(%s,%s, %s,%s,%s, %s) ON DUPLICATE KEY UPDATE status = VALUES (status) ,coord_x = VALUES (coord_x),coord_y = VALUES (coord_y), capacity = VALUES (capacity), qtd_used = VALUES (qtd_used), next_trash = VALUES (next_trash)"
+            values = (payload.status,
+                      payload.coords[0],
+                      payload.coords[1],
+                      payload.capacity,
+                      payload.qtd_used,
+                      trash[0]
+                      )
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                garbage_truck = cursor.lastrowid
+                self._db.commit()
+                return json.dumps({"done": True, "trash": trash, "truck_id": garbage_truck})
+            except Exception as e:
+                print('Error ', e.args)
+
+        # ROUTE GET /truck/trash
+        elif method == "GET" and route == "/truck/trash":
+            sql = "SELECT l.* FROM caminhao as c INNER JOIN lixeira as l ON c.next_trash = l.id WHERE c.id = %s;"
+            values = (
+                params.get('id')[0],
+            )
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                myresult = cursor.fetchone()
+                self._db.commit()
+                print(myresult)
+
+                return json.dumps({"Done": True, "trash": myresult})
+            except Exception as e:
+                print('Error ', e.args)
+
+        # ROUTE POST /truck/collect_garbage
+        elif method == "POST" and route == "/truck/collect-garbage":
+            sql = "UPDATE lixeira SET qtd_used=%s WHERE coord_x = %s AND coord_y = %s;"
+            values = ('0', str(payload.coord[0]), str(payload.coord[1]))
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                self._db.commit()
+                return json.dumps({"done": True})
+            except Exception as e:
+                print('Error ', e.args)
+                self._db.rollback()
+
+        # ROUTE POST /truck/next-garbage
+        elif method == "POST" and route == "/truck/next-garbage":
+            trash = self.next_trash(payload.coords)
+            sql = "UPDATE caminhao SET next_trash=%s WHERE id=%s;"
+            values = (str(trash[0]), str(payload.id))
+            print(values)
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
+                self._db.commit()
+                return json.dumps({"Done": True, "next_trash": trash})
+            except Exception as e:
+                print('Error ', e.args)
+                self._db.rollback()
+
     def comp(item):  # primeiro item em ordem decrescente, segundo em ordem crescente
         print("veio comp")
         return -item[8], item[7]
-
-    def update_next_trahs(self, coords, id):
-        trash = self.next_trash(coords)
-        sql = "UPDATE caminhao SET next_trash=%s WHERE id=%s;"
-        values = (str(trash[0]), str(id))
-        try:
-            cursor = self._db.cursor()
-            cursor.execute(sql, values)
-            self._db.commit()
-            return trash
-        except Exception as e:
-            print('Error ', e.args)
-            self._db.rollback()
 
     def next_trash(self, dist):
         sql = "SELECT * FROM lixeira"
@@ -270,7 +317,7 @@ class Server():
                 list_trash.append(trash)
             print(list_trash)
             sortedLista = sorted(
-                list_trash, key=lambda item: (-item[8], item[7]))
+                list_trash, key=lambda item: (-item[7], item[8]))
             print("sortlist: ", sortedLista[0])
             return sortedLista[0]
         except Exception as e:

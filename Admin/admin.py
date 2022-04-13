@@ -14,10 +14,15 @@ class Admin():
         response = self.service.GET("/list-trash?", data)
         return response
 
-    def collect_garbage(self, data):
-        response = self.service.POST("/collect_garbage", data)
-        return response
+    def set_trunck(self, data):
+        response = self.service.POST("/set-truck", json.dumps(data))
+        print(response)
 
     def update_state(self, data):
         response = self.service.POST(
             "/dumps/status", json.dumps({"coord_x": data[0], "coord_y": data[1], "status": data[2]}), )
+
+    def get_list_truck(self, data=''):
+        response = self.service.GET("/list-truck?", data)
+        print(response)
+        return response

@@ -10,6 +10,10 @@ import time
 class Application:
     def __init__(self, master=None):
         self.fontePadrao = ("Arial", "10")
+
+        self.frameMaster = Frame(master)
+        self.frameMaster.pack()
+
         self.primaryContainer = Frame(master)
         self.primaryContainer["pady"] = 10
         self.primaryContainer.pack()
@@ -72,64 +76,102 @@ class Application:
         try:
             self.admin = Admin()
             self.admin.start(host, int(port))
-            x = threading.Thread(target=self.thread_function, args=(), daemon=True)
+            x = threading.Thread(
+                target=self.thread_function, args=(), daemon=True)
             x.start()
 
         except Exception as e:
             self.message["text"] = "Dados inválidos ".join(e.args)
             self.message["bg"] = "red"
-        
 
     def renderTrash(self, row, row_idx):
-
         frame = Frame(
-            master=root,
+            master=self.frameMaster,
             relief=RAISED,
             borderwidth=1,
             width=500, height=50
         )
-        frame.grid(row=row_idx, column=0, columnspan=4, padx=5, pady=5)
-        orderLabel = Label(frame, text="Prioridade")
+        frame.grid(row=(row_idx+1), column=0, columnspan=4, padx=5, pady=5)
+        orderLabel = Label(frame, text="Lixeira")
         orderLabel.pack(side=LEFT)
-        order = Label(frame, text=str(row_idx)+"º")
+        order = Label(frame, text=str((row_idx+1)))
         order.pack(side=LEFT)
         statusLabel = Label(frame, text="Status:")
         statusLabel.pack(side=LEFT)
         status = Label(frame, text='', width=5, padx=5)
-        if bool(row[2]):
+        if bool(row[3]):
             status["bg"] = 'green'
         else:
             status["bg"] = 'red'
         status.pack(side=LEFT)
         capacityLabel = Label(frame, text="Capacidade:")
         capacityLabel.pack(side=LEFT)
-        capacity = Label(frame, text=row[5], padx=5)
+        capacity = Label(frame, text=row[6], padx=5)
         capacity.pack(side=LEFT)
         coord_xLabel = Label(frame, text="Posição x:")
         coord_xLabel.pack(side=LEFT)
-        coord_x = Label(frame, text=row[3], padx=5)
+        coord_x = Label(frame, text=row[4], padx=5)
         coord_x.pack(side=LEFT)
         coord_yLabel = Label(frame, text="Posição y:")
         coord_yLabel.pack(side=LEFT)
-        coord_y = Label(frame, text=row[4], padx=5)
+        coord_y = Label(frame, text=row[5], padx=5)
         coord_y.pack(side=LEFT)
         qtd_usedLabel = Label(frame, text="Quantidade utilizada:")
         qtd_usedLabel.pack(side=LEFT)
-        qtd_used = Label(frame, text=str(row[6])+'%', padx=5)
+        qtd_used = Label(frame, text=str(row[7])+'%', padx=5)
         qtd_used.pack(side=LEFT)
         collect = Button(frame)
-        collect["text"] = "Coletar"
+        collect["text"] = "Setar coleta"
         collect["font"] = ("Calibri", "8")
         collect["width"] = 18
-        collect["command"] = lambda: [self.collect_garbage((row[3], row[4]))]
+        collect["command"] = lambda: [self.admin.set_trunck({"id": row[0]})]
         collect.pack()
         collect = Button(frame)
         collect["text"] = "Bloquear/Desbloquear"
         collect["font"] = ("Calibri", "8")
         collect["width"] = 18
         collect["command"] = lambda: [
-            self.admin.update_state((row[3], row[4], not bool(row[2])))]
+            self.admin.update_state((row[4], row[5], not bool(row[3])))]
         collect.pack()
+
+    def renderTruck(self, row, row_idx):
+        frame = Frame(
+            master=self.frameMaster,
+            relief=RAISED,
+            borderwidth=1,
+            width=500, height=50
+        )
+        frame.grid(row=(row_idx+1), column=0,
+                   columnspan=4, padx=5, pady=5)
+        statusLabel = Label(frame, text="Status:")
+        statusLabel.pack(side=LEFT)
+        status = Label(frame, text='', width=5, padx=5)
+        if bool(row[1]):
+            status["bg"] = 'green'
+        else:
+            status["bg"] = 'red'
+        status.pack(side=LEFT)
+        capacityLabel = Label(frame, text="Capacidade:")
+        capacityLabel.pack(side=LEFT)
+        capacity = Label(frame, text=row[4], padx=5)
+        capacity.pack(side=LEFT)
+        coord_xLabel = Label(frame, text="Posição x:")
+        coord_xLabel.pack(side=LEFT)
+        coord_x = Label(frame, text=row[2], padx=5)
+        coord_x.pack(side=LEFT)
+        coord_yLabel = Label(frame, text="Posição y:")
+        coord_yLabel.pack(side=LEFT)
+        coord_y = Label(frame, text=row[3], padx=5)
+        coord_y.pack(side=LEFT)
+        qtd_usedLabel = Label(frame, text="Quantidade utilizada:")
+        qtd_usedLabel.pack(side=LEFT)
+        qtd_used = Label(frame, text=str(row[5])+'%', padx=5)
+        qtd_used.pack(side=LEFT)
+
+        next_trashLabel = Label(frame, text="Pŕoxima lixeira:")
+        next_trashLabel.pack(side=LEFT)
+        next_trash = Label(frame, text=str(row[6]), padx=5)
+        next_trash.pack(side=LEFT)
 
     def setStateTrash(self):
         data = json.dumps({"state": False, "id": 2})
@@ -141,19 +183,46 @@ class Application:
             self.secondContainer.destroy()
             self.thirdContainer.destroy()
             self.seventhContainer.destroy()
-            list = self.admin.get_list_trash()
-            for row_idx, row in enumerate(list):
+            self.frameMaster.destroy()
+            self.frameMaster = Frame(root)
+            self.frameMaster.pack()
+            frame = Frame(
+                master=self.frameMaster,
+                relief=RAISED,
+                borderwidth=1,
+                width=500, height=50
+            )
+            frame.grid(row=0, column=0, columnspan=4, padx=5, pady=5)
+            title = Label(frame,
+                          text="Lista de lixeiras")
+            title["font"] = ("Arial", "10", "bold")
+            title.pack()
+            list_trash = self.admin.get_list_trash()
+            count = 1
+            for row_idx, row in enumerate(list_trash):
                 self.renderTrash(row, row_idx)
-            print(list)
-            
+                count = row_idx+2
+
+            frame2 = Frame(
+                master=self.frameMaster,
+                relief=RAISED,
+                borderwidth=1,
+                width=500, height=50
+            )
+            frame2.grid(row=count, column=0, columnspan=4, padx=5, pady=5)
+            title2 = Label(frame2,
+                           text="Lista de caminhões")
+            title2["font"] = ("Arial", "10", "bold")
+            title2.pack()
+            list_truck = self.admin.get_list_truck()
+            for row_idx, row in enumerate(list_truck):
+                self.renderTruck(row, row_idx+count)
+
         except Exception as e:
             self.error(e.args)
 
-    def error(self,error):
+    def error(self, error):
         messagebox.showerror("Title", "Erro na comunicação! "+str(error))
-
-
-        
 
     def collect_garbage(self, coord):
         payload = json.dumps({"coord": coord})

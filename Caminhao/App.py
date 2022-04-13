@@ -137,7 +137,8 @@ class Application:
         self.newWindow = Toplevel(root)
         self.newWindow.title("Caminhao")
         self.newWindow.geometry("900x400+100+100")
-        self.listTrash()
+        x = threading.Thread(target=self.thread_function, args=(), daemon=True)
+        x.start()
 
     def renderTrash(self, trash):
         self.frame = Frame(
@@ -184,8 +185,15 @@ class Application:
             self.collect_garbage((trash[4], trash[5]))]
         collect.pack()
 
-    def listTrash(self):
-        trash = self.caminhao.trash
+        collect = Button(self.frame)
+        collect["text"] = "Ir próxima"
+        collect["font"] = ("Calibri", "8")
+        collect["width"] = 18
+        collect["command"] = lambda: [
+            self.next_garbage()]
+        collect.pack()
+
+    def listTrash(self, trash):
         print("trash",trash)
         print("id",trash[0])
         self.frame.destroy()
@@ -193,10 +201,19 @@ class Application:
        
 
     def collect_garbage(self, coord):
-        payload = json.dumps({"coord": coord, "id":self.caminhao.trash[0]})
+        payload = json.dumps({"coord": coord})
         resp = self.caminhao.collect_garbage(payload)
-        self.listTrash()
         print(resp)
+
+    def next_garbage(self):
+        trash = self.caminhao.next_garbage()
+        self.listTrash(trash)
+
+    def thread_function(self):
+        while True:
+            trash = self.caminhao.status_trash()
+            self.listTrash(trash)
+            time.sleep(10)
 
 
 root = Tk()
