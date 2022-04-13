@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 from lixeira import Lixeira
 import threading
 import time
@@ -138,11 +139,11 @@ class Application:
     def createWindowsActions(self):
         newWindow = Toplevel(root)
         newWindow.title("Lixeira")
-        newWindow.geometry("400x200+100+100")
-        self.container4 = Frame(newWindow)
-        self.container4["padx"] = 30
-        self.container4["pady"] = 5
-        self.container4.pack()
+        newWindow.geometry("400x300+100+100")
+        self.container0 = Frame(newWindow)
+        self.container0["padx"] = 30
+        self.container0["pady"] = 5
+        self.container0.pack()
         self.container1 = Frame(newWindow)
         self.container1["padx"] = 30
         self.container1["pady"] = 5
@@ -155,14 +156,18 @@ class Application:
         self.container3["padx"] = 30
         self.container3["pady"] = 10
         self.container3.pack()
+        self.container4 = Frame(newWindow)
+        self.container4["padx"] = 30
+        self.container4["pady"] = 5
+        self.container4.pack()
 
         self.statusLabel = Label(
-            self.container4, text="Status:", font=self.fontePadrao, width=20)
+            self.container0, text="Status:", font=self.fontePadrao, width=20)
         self.statusLabel["font"] = ("Arial", "10", "bold")
         self.statusLabel.pack()
 
         status = self.lixeira.get_state()
-        self.status = Label(self.container4, text='', font=self.fontePadrao, width=10)
+        self.status = Label(self.container0, text='', font=self.fontePadrao, width=10)
         self.status["font"] = ("Arial", "10", "bold")
         if status:
             self.status["bg"] = 'green'
@@ -192,37 +197,58 @@ class Application:
         self.qtdUsed["font"] = ("Arial", "10", "bold")
         self.qtdUsed.pack()
 
-        adcTrash = Button(self.container3, text="+",
-                          font=self.fontePadrao, width=12)
-        adcTrash["command"] = self.adcTrash
-        adcTrash.pack(side=LEFT)
         removeTrash = Button(self.container3, text="-",
                              font=self.fontePadrao, width=12)
         removeTrash["command"] = self.removeTrash
         removeTrash.pack(side=LEFT)
 
+        adcTrash = Button(self.container3, text="+",
+                          font=self.fontePadrao, width=12)
+        adcTrash["command"] = self.adcTrash
+        adcTrash.pack(side=LEFT)
+        
+        self.exit = Button(self.container4)
+        self.exit["text"] = "Sair"
+        self.exit["font"] = ("Calibri", "8")
+        self.exit["width"] = 12
+        self.exit["command"] = lambda: [root.destroy()]
+        self.exit.pack()
+
+
+
     def adcTrash(self):
-        self.lixeira.set_trash(1)
-        qtd = self.lixeira.get_trash()
-        self.qtdUsed['text'] = str(qtd) + "%"
+        try:
+            self.lixeira.set_trash(8)
+            qtd = self.lixeira.get_trash()
+            self.qtdUsed['text'] = str(qtd) + "%"
+        except Exception as e:
+            self.alert("lixiera atingiu capacidade máxima!")
 
     def removeTrash(self):
-        self.lixeira.set_trash(-1)
+        self.lixeira.set_trash(-8)
         qtd = self.lixeira.get_trash()
         self.qtdUsed['text'] = str(qtd) + "%"
 
     def thread_function(self):
         while True:
-            self.lixeira.update_state()
-            qtd = str(self.lixeira.get_trash()) + "%"
-            self.qtdUsed['text'] = qtd
-            status = self.lixeira.get_state()
-            if status:
-                self.status["bg"] = 'green'
-            else:
-                self.status["bg"] = 'red'
+            try:
+                self.lixeira.update_state()
+                qtd = str(self.lixeira.get_trash()) + "%"
+                self.qtdUsed['text'] = qtd
+                status = self.lixeira.get_state()
+                if status:
+                    self.status["bg"] = 'green'
+                else:
+                    self.status["bg"] = 'red'
+            except Exception as e:
+                self.error(e.args)
             time.sleep(10)
 
+    def error(self, error):
+        messagebox.showerror("Atenção", "Erro na comunicação! "+str(error))
+
+    def alert(self, error):
+        messagebox.showwarning("Title", str(error))
 
 root = Tk()
 root.title("Lixeira")

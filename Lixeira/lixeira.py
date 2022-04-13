@@ -28,13 +28,15 @@ class Lixeira():
     def set_trash(self, qtd):
         qtd_used = self.__qtd_used
         qtd_used += qtd
-        if qtd_used < 0:
-            qtd_used = 0
-        response = self.service.POST(
-            "/dumps/set-trash", json.dumps({"coords": self.__coords, 'qtd': qtd_used}))
-        if response.done:
-            self.__qtd_used = qtd_used
-        return response
+        if qtd_used <= self.__capacity:
+            if qtd_used < 0:
+                qtd_used = 0
+            response = self.service.POST(
+                "/dumps/set-trash", json.dumps({"coords": self.__coords, 'qtd': qtd_used}))
+            if response.done:
+                self.__qtd_used = qtd_used
+        else:
+            raise "Error"
 
     def get_trash(self):
         if self.__qtd_used > 0:

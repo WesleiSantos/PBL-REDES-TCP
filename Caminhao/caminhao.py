@@ -27,20 +27,28 @@ class Caminhao():
     def get_capacity(self):
         return self.__capacity
 
-    def collect_garbage(self, data):
-        response = self.service.POST("/truck/collect-garbage", data)
-        print("response collect: ", response)
-        return response
-    
+    def collect_garbage(self):
+        qtd = self.__qtd_used+self.trash[7]
+        if qtd <= self.__capacity:
+            data = json.dumps({"coord": (
+                self.trash[4], self.trash[5]), "qtd_used": qtd, "id": self.id})
+            response = self.service.POST("/truck/collect-garbage", data)
+            print("response collect: ", response)
+            return response
+        else: 
+            raise "Não é possível fazer a coleta, pois o caminhão atingiu a capacidade máxima!"
+
     def next_garbage(self):
-        response = self.service.POST("/truck/next-garbage",json.dumps({"coords":self.__coords, "id": self.id}))
+        response = self.service.POST(
+            "/truck/next-garbage", json.dumps({"coords": self.__coords, "id": self.id}))
         print("response collect: ", response)
         trash = response.next_trash
         self.trash = trash
         return trash
 
     def unload_truck(self):
-        response = self.service.POST("/truck/unload",json.dumps({"id": self.id}))
+        response = self.service.POST(
+            "/truck/unload", json.dumps({"id": self.id}))
         print("response collect: ", response)
         self.__qtd_used = 0
         return response
@@ -49,7 +57,7 @@ class Caminhao():
         response = self.service.GET("/truck?", {"id": self.id})
         print("truck status: ", response)
         truck = response.truck
-        self.__coords = (truck[2],truck[3])
+        self.__coords = (truck[2], truck[3])
         self.__capacity = truck[4]
         self.__qtd_used = truck[5]
         return response.Done
@@ -63,9 +71,9 @@ class Caminhao():
 
     def get_capacity(self):
         return self.__capacity
-    
+
     def get_coords(self):
         return self.__coords
-    
+
     def get_qtd_used(self):
         return self.__qtd_used

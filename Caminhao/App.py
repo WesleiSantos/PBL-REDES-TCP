@@ -203,7 +203,7 @@ class Application:
         collect["font"] = ("Calibri", "8")
         collect["width"] = 18
         collect["command"] = lambda: [
-            self.collect_garbage(trash[3], (trash[4], trash[5]))]
+            self.collect_garbage(trash[3])]
         collect.pack()
 
         collect = Button(self.frame)
@@ -277,11 +277,13 @@ class Application:
         self.exit["command"] = lambda: [root.destroy()]
         self.exit.pack()
 
-    def collect_garbage(self, status, coord):
-        payload = json.dumps({"coord": coord})
+    def collect_garbage(self, status):
         if status:
-            resp = self.caminhao.collect_garbage(payload)
-            print(resp)
+            try:
+                resp = self.caminhao.collect_garbage()
+                print(resp)
+            except Exception as e:
+                self.alert("Não é possível fazer a coleta, pois o caminhão atingiu a capacidade máxima!")    
         else:
             self.alert("Lixeira bloqueada!")
 
