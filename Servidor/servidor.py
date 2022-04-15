@@ -161,6 +161,7 @@ class Server():
                 return json.dumps({"done": True})
             except Exception as e:
                 print('Error ', e.args)
+                self._db.rollback()
 
         # ROUTE POST /dumps/register-trash
         elif method == "POST" and route == "/dumps/register-trash":
@@ -173,10 +174,25 @@ class Server():
             try:
                 cursor = self._db.cursor()
                 cursor.execute(sql, values)
+                trash = cursor.lastrowid
+                self._db.commit()
+                return json.dumps({"done": True, "id": trash})
+            except Exception as e:
+                print('Error ', e.args)
+                self._db.rollback()
+
+        # ROUTE POST /dumps/delete
+        elif method == "POST" and route == "/dumps/delete":
+            sql = "DELETE FROM lixeira WHERE id = %s;"
+            values = (payload.id,)
+            try:
+                cursor = self._db.cursor()
+                cursor.execute(sql, values)
                 self._db.commit()
                 return json.dumps({"done": True})
             except Exception as e:
                 print('Error ', e.args)
+                self._db.rollback()
 
         # ROUTE POST /dumps/set-trash
         elif method == "POST" and route == "/dumps/set-trash":
@@ -193,6 +209,7 @@ class Server():
                 return json.dumps({"done": True})
             except Exception as e:
                 print('Error ', e.args)
+                self._db.rollback()
 
         # ROUTE GET /dumps/status
         elif method == "GET" and route == "/dumps/status":
@@ -226,6 +243,7 @@ class Server():
                 return json.dumps({"done": True})
             except Exception as e:
                 print('Error ', e.args)
+                self._db.rollback()
 
         # ROUTE GET /truck
         elif method == "GET" and route == "/truck":
@@ -246,22 +264,39 @@ class Server():
         # ROUTE POST /truck/register
         elif method == "POST" and route == "/truck/register":
             trash = self.next_trash(payload.coords)
-            sql = "INSERT INTO caminhao(status,coord_x,coord_y, capacity, qtd_used, next_trash) VALUES(%s,%s, %s,%s,%s, %s) ON DUPLICATE KEY UPDATE status = VALUES (status) ,coord_x = VALUES (coord_x),coord_y = VALUES (coord_y), capacity = VALUES (capacity), qtd_used = VALUES (qtd_used), next_trash = VALUES (next_trash)"
-            values = (payload.status,
-                      trash[4],
-                      trash[5],
-                      payload.capacity,
-                      payload.qtd_used,
-                      trash[0]
-                      )
+            if len(trash) != 0:
+                sql = "INSERT INTO caminhao(status,coord_x,coord_y, capacity, qtd_used, next_trash) VALUES(%s,%s, %s,%s,%s, %s) ON DUPLICATE KEY UPDATE status = VALUES (status) ,coord_x = VALUES (coord_x),coord_y = VALUES (coord_y), capacity = VALUES (capacity), qtd_used = VALUES (qtd_used), next_trash = VALUES (next_trash)"
+                values = (payload.status,
+                          trash[4],
+                          trash[5],
+                          payload.capacity,
+                          payload.qtd_used,
+                          trash[0]
+                          )
+                try:
+                    cursor = self._db.cursor()
+                    cursor.execute(sql, values)
+                    garbage_truck = cursor.lastrowid
+                    self._db.commit()
+                    return json.dumps({"done": True, "trash": trash, "truck_id": garbage_truck})
+                except Exception as e:
+                    print('Error ', e.args)
+                    self._db.rollback()
+            else:
+                return json.dumps({"done": False}) 
+
+        # ROUTE POST /truck/delete
+        elif method == "POST" and route == "/truck/delete":
+            sql = "DELETE FROM caminhao WHERE id = %s;"
+            values = (payload.id,)
             try:
                 cursor = self._db.cursor()
                 cursor.execute(sql, values)
-                garbage_truck = cursor.lastrowid
                 self._db.commit()
-                return json.dumps({"done": True, "trash": trash, "truck_id": garbage_truck})
+                return json.dumps({"done": True})
             except Exception as e:
                 print('Error ', e.args)
+                self._db.rollback()
 
         # ROUTE GET /truck/trash
         elif method == "GET" and route == "/truck/trash":
@@ -348,7 +383,9 @@ class Server():
             cursor.execute(sql)
             myresult = cursor.fetchall()
             self._db.commit()
-            print(myresult)
+            print(len(myresult))
+            if len(myresult) == 0:
+                return myresult
             list_trash = list()
             for trash in myresult:
                 trash = list(trash)

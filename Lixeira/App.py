@@ -7,6 +7,7 @@ import time
 
 class Application:
     def __init__(self, master=None):
+        master.wm_protocol("WM_DELETE_WINDOW",self.on_delete)
 
         self.fontePadrao = ("Arial", "10")
         self.primaryContainer = Frame(master)
@@ -131,15 +132,16 @@ class Application:
             else:
                 self.message["text"] = "Falha ao registrar!"
                 self.message["bg"] = "red"
-
         except Exception as e:
-            self.message["text"] = "Dados inválidos ".join(e.args)
-            self.message["bg"] = "red"
+            self.error(e.args)
+            '''self.message["text"] = "Dados inválidos ".join(e.args)
+            self.message["bg"] = "red"'''
 
     def createWindowsActions(self):
-        newWindow = Toplevel(root)
-        newWindow.title("Lixeira")
-        newWindow.geometry("400x300+100+100")
+        self.destroyContainers()
+        root.geometry("400x400+100+100")
+        newWindow = Frame(root)
+        newWindow.pack()
         self.container0 = Frame(newWindow)
         self.container0["padx"] = 30
         self.container0["pady"] = 5
@@ -160,6 +162,14 @@ class Application:
         self.container4["padx"] = 30
         self.container4["pady"] = 5
         self.container4.pack()
+        self.container5 = Frame(newWindow)
+        self.container5["padx"] = 30
+        self.container5["pady"] = 5
+        self.container5.pack()
+        self.container6 = Frame(newWindow)
+        self.container6["padx"] = 30
+        self.container6["pady"] = 5
+        self.container6.pack()
 
         self.statusLabel = Label(
             self.container0, text="Status:", font=self.fontePadrao, width=20)
@@ -167,7 +177,8 @@ class Application:
         self.statusLabel.pack()
 
         status = self.lixeira.get_state()
-        self.status = Label(self.container0, text='', font=self.fontePadrao, width=10)
+        self.status = Label(self.container0, text='',
+                            font=self.fontePadrao, width=10)
         self.status["font"] = ("Arial", "10", "bold")
         if status:
             self.status["bg"] = 'green'
@@ -197,37 +208,61 @@ class Application:
         self.qtdUsed["font"] = ("Arial", "10", "bold")
         self.qtdUsed.pack()
 
-        removeTrash = Button(self.container3, text="-",
+        coord_xLabel = Label(self.container3, text="Posição x:")
+        coord_xLabel.pack(side=LEFT)
+        coord_x = Label(self.container3,
+                        text=self.lixeira.get_coords()[0], padx=5)
+        coord_x.pack(side=LEFT)
+        coord_yLabel = Label(self.container3, text="Posição y:")
+        coord_yLabel.pack(side=LEFT)
+        coord_y = Label(self.container3,
+                        text=self.lixeira.get_coords()[1], padx=5)
+        coord_y.pack(side=LEFT)
+
+        removeTrash = Button(self.container4, text="-",
                              font=self.fontePadrao, width=12)
         removeTrash["command"] = self.removeTrash
         removeTrash.pack(side=LEFT)
 
-        adcTrash = Button(self.container3, text="+",
+        adcTrash = Button(self.container4, text="+",
                           font=self.fontePadrao, width=12)
         adcTrash["command"] = self.adcTrash
         adcTrash.pack(side=LEFT)
-        
-        self.exit = Button(self.container4)
+
+        self.exit = Button(self.container5)
         self.exit["text"] = "Sair"
         self.exit["font"] = ("Calibri", "8")
         self.exit["width"] = 12
-        self.exit["command"] = lambda: [root.destroy()]
+        self.exit["command"] = self.on_delete
         self.exit.pack()
 
-
+    def destroyContainers(self):
+        self.primaryContainer.destroy()
+        self.secondContainer.destroy()
+        self.thirdContainer.destroy()
+        self.fourthContainer.destroy()
+        self.fifthContainer.destroy()
+        self.sixthContainer.destroy()
+        self.seventhContainer.destroy()
 
     def adcTrash(self):
         try:
-            self.lixeira.set_trash(8)
-            qtd = self.lixeira.get_trash()
-            self.qtdUsed['text'] = str(qtd) + "%"
+            if self.lixeira.get_state():
+                self.lixeira.set_trash(8)
+                qtd = self.lixeira.get_trash()
+                self.qtdUsed['text'] = str(qtd) + "%"
+            else:
+                self.alert("lixiera bloqueada!")
         except Exception as e:
             self.alert("lixiera atingiu capacidade máxima!")
 
     def removeTrash(self):
-        self.lixeira.set_trash(-8)
-        qtd = self.lixeira.get_trash()
-        self.qtdUsed['text'] = str(qtd) + "%"
+        if self.lixeira.get_state():
+            self.lixeira.set_trash(-8)
+            qtd = self.lixeira.get_trash()
+            self.qtdUsed['text'] = str(qtd) + "%"
+        else:
+            self.alert("lixiera bloqueada!")
 
     def thread_function(self):
         while True:
@@ -242,13 +277,18 @@ class Application:
                     self.status["bg"] = 'red'
             except Exception as e:
                 self.error(e.args)
-            time.sleep(10)
+            time.sleep(3)
 
     def error(self, error):
         messagebox.showerror("Atenção", "Erro na comunicação! "+str(error))
 
     def alert(self, error):
         messagebox.showwarning("Title", str(error))
+    
+    def on_delete(self):
+        self.lixeira.delete()
+        root.destroy()
+
 
 root = Tk()
 root.title("Lixeira")

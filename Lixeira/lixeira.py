@@ -6,6 +6,7 @@ from services import Services
 class Lixeira():
 
     def __init__(self, x, y, capacity):
+        self.__id = None
         self.__status = True
         self.__coords = (x, y)
         self.__capacity = capacity
@@ -16,10 +17,13 @@ class Lixeira():
         data = json.dumps({"status": self.__status,
                           "coords": self.__coords, "capacity": self.__capacity, "qtd_used": self.__qtd_used})
         response = self.service.POST("/dumps/register-trash", data)
+        self.__id = response.id
         print("register: ", response)
         return response
 
-
+    def delete(self):
+        response = self.service.POST("/dumps/delete", json.dumps({"id":self.__id}))
+    
     def update_state(self):
         response = self.service.GET("/dumps/status?", {"coord_x": self.__coords[0],"coord_y": self.__coords[1]})
         self.__status = bool(response.status)
@@ -52,3 +56,6 @@ class Lixeira():
 
     def get_capacity(self):
         return self.__capacity
+
+    def get_coords(self):
+        return self.__coords

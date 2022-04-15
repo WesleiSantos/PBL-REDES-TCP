@@ -255,7 +255,7 @@ class Application:
     def thread_function(self):
         while True:
             self.listTrash()
-            time.sleep(10)
+            time.sleep(3)
 
 
 root = Tk()

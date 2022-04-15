@@ -9,6 +9,7 @@ import time
 
 class Application:
     def __init__(self, master=None):
+        master.wm_protocol("WM_DELETE_WINDOW",self.on_delete)
         self.frame = Frame()
         self.infoFrame = Frame()
         self.titleFrame = Frame()
@@ -131,8 +132,8 @@ class Application:
             else:
                 self.message["text"] = "Falha ao registrar!"
                 self.message["bg"] = "red"
-
         except Exception as e:
+            print(e.args)
             self.message["text"] = "Dados inválidos ".join(e.args)
             self.message["bg"] = "red"
 
@@ -274,7 +275,7 @@ class Application:
         self.exit["text"] = "Sair"
         self.exit["font"] = ("Calibri", "8")
         self.exit["width"] = 12
-        self.exit["command"] = lambda: [root.destroy()]
+        self.exit["command"] = self.on_delete
         self.exit.pack()
 
     def collect_garbage(self, status):
@@ -305,7 +306,11 @@ class Application:
                 self.caminhao.updateState()
             except Exception as e:
                 self.error(e.args)
-            time.sleep(10)
+            time.sleep(3)
+    
+    def on_delete(self):
+        self.caminhao.delete()
+        root.destroy()
 
 
 root = Tk()

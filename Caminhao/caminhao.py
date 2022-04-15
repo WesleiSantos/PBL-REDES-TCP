@@ -17,6 +17,8 @@ class Caminhao():
         data = json.dumps({"status": True,
                           "coords": self.__coords, "capacity": self.__capacity, "qtd_used": self.__qtd_used})
         response = self.service.POST("/truck/register", data)
+        if not response.done:
+            raise Exception("Não há lixeiras em funcionamento!")
         self.trash = response.trash
         print("register: ", response)
 
@@ -35,8 +37,8 @@ class Caminhao():
             response = self.service.POST("/truck/collect-garbage", data)
             print("response collect: ", response)
             return response
-        else: 
-            raise "Não é possível fazer a coleta, pois o caminhão atingiu a capacidade máxima!"
+        else:
+            raise Exception("Não é possível fazer a coleta, pois o caminhão atingiu a capacidade máxima!")
 
     def next_garbage(self):
         response = self.service.POST(
@@ -45,6 +47,10 @@ class Caminhao():
         trash = response.next_trash
         self.trash = trash
         return trash
+
+    def delete(self):
+        response = self.service.POST(
+            "/truck/delete", json.dumps({"id": self.id}))
 
     def unload_truck(self):
         response = self.service.POST(
