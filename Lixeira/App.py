@@ -296,12 +296,18 @@ class Application:
     
     #Método chamado ao desconectar lixeira
     def on_delete(self):
-        self.lixeira.delete()
-        self.lixeira.disconnect()
-        root.destroy()
+        try:
+            self.lixeira.delete()
+            self.lixeira.disconnect()
+            root.destroy()
+        except Exception as e:
+            root.destroy()
 
 root = Tk()
 root.title("Lixeira")
 root.geometry("400x400+100+100")
 Application(root)
 root.mainloop()
+
+if __name__ == '__main__':
+    Application()

@@ -319,9 +319,12 @@ class Application:
     
     #Método chamado ao desconectar lixeira
     def on_delete(self):
-        self.caminhao.delete()
-        self.caminhao.disconnect()
-        root.destroy()
+        try:
+            self.caminhao.delete()
+            self.caminhao.disconnect()
+            root.destroy()
+        except Exception as e:
+            root.destroy()
 
 
 root = Tk()
@@ -329,3 +332,5 @@ root.title("caminhao")
 root.geometry("900x400+100+100")
 Application(root)
 root.mainloop()
+if __name__ == '__main__':
+    Application()

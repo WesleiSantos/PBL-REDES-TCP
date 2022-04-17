@@ -261,8 +261,11 @@ class Application:
 
     #Método chamado ao desconectar lixeira
     def on_delete(self):
-        self.admin.disconnect()
-        root.destroy()
+        try:
+            self.admin.disconnect()
+            root.destroy()
+        except Exception as e:
+            root.destroy()
 
     #Therad para atualizar informações da lixeira e caminhão a cada 3s
     def thread_function(self):
@@ -276,3 +279,6 @@ root.title("admin")
 root.geometry("900x400+100+100")
 Application(root)
 root.mainloop()
+
+if __name__ == '__main__':
+    Application()
