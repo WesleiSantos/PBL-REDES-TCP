@@ -114,3 +114,7 @@ class Server():
                 print("Nome ou senha está inválido!")
             else:
                 print(error)
+
+if __name__ == '__main__':
+    serv = Server('localhost', 9000)
+    serv.start()
