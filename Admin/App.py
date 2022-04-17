@@ -8,6 +8,8 @@ import time
 
 
 class Application:
+
+    #Constroi tela inicial
     def __init__(self, master=None):
         master.wm_protocol("WM_DELETE_WINDOW",self.on_delete)
 
@@ -86,6 +88,7 @@ class Application:
             self.message["text"] = "Dados inválidos ".join(e.args)
             self.message["bg"] = "red"
 
+    #Método para renderizar informações das lixeiras
     def renderTrash(self, row, row_idx):
         frame = Frame(
             master=self.frameMaster,
@@ -136,6 +139,7 @@ class Application:
             self.admin.update_state((row[4], row[5], not bool(row[3])))]
         collect.pack()
 
+    #Método para renderizar informações do caminhão
     def renderTruck(self, row, row_idx):
         frame = Frame(
             master=self.frameMaster,
@@ -175,16 +179,19 @@ class Application:
         next_trash = Label(frame, text=str(row[6]), padx=5)
         next_trash.pack(side=LEFT)
 
+    #Método para atualizar status da lixeira
     def setStateTrash(self):
         data = json.dumps({"state": False, "id": 2})
         self.admin.get_list_trash(data)
 
+    #Método para setar lixeira para o caminhão
     def setTruck(self, id, status):
         if status:
             self.admin.set_trunck({"id": id})
         else:
             self.alert("Lixeira bloqueada!")
 
+    #Método para renderizar lista de lixeiras
     def listTrash(self):
         try:
             self.destroyContainers()
@@ -234,6 +241,7 @@ class Application:
         except Exception as e:
             self.error(e.args)
 
+    #Método para destruir containers
     def destroyContainers(self):
         self.primaryContainer.destroy()
         self.secondContainer.destroy()
@@ -243,21 +251,20 @@ class Application:
         self.frameMaster = Frame(root)
         self.frameMaster.pack()
 
+    #Método que exibe mensagem de erro
     def error(self, error):
         messagebox.showerror("Title", "Erro na comunicação! "+str(error))
 
+    #Método que exibe mensagem de alerta
     def alert(self, error):
         messagebox.showwarning("Title", str(error))
 
+    #Método chamado ao desconectar lixeira
     def on_delete(self):
         self.admin.disconnect()
         root.destroy()
-    
-    def collect_garbage(self, coord):
-        payload = json.dumps({"coord": coord})
-        resp = self.admin.collect_garbage(payload)
-        print(resp)
 
+    #Therad para atualizar informações da lixeira e caminhão a cada 3s
     def thread_function(self):
         while True:
             self.listTrash()

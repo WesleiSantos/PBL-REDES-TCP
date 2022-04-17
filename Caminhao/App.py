@@ -8,6 +8,8 @@ import time
 
 
 class Application:
+    
+    #Constroi tela inicial
     def __init__(self, master=None):
         master.wm_protocol("WM_DELETE_WINDOW",self.on_delete)
         self.frame = Frame()
@@ -133,16 +135,18 @@ class Application:
                 self.message["text"] = "Falha ao registrar!"
                 self.message["bg"] = "red"
         except Exception as e:
-            print(e.args)
+            print("error ", e.args)
             self.message["text"] = "Dados inválidos ".join(e.args)
             self.message["bg"] = "red"
 
+    #Método para renderizar informações do caminhão
     def createWindowsActions(self):
         self.destroyContainers()
         root.geometry("900x250+100+100")
         x = threading.Thread(target=self.thread_function, args=(), daemon=True)
         x.start()
 
+    #Método para destruir os containers
     def destroyContainers(self):
         self.primaryContainer.destroy()
         self.secondContainer.destroy()
@@ -152,6 +156,7 @@ class Application:
         self.sixthContainer.destroy()
         self.seventhContainer.destroy()
 
+    #Método para renderizar lixeira para coleta
     def renderTrash(self, trash):
         
         self.titleTrashFrame = Frame(master=root,
@@ -214,7 +219,8 @@ class Application:
         collect["command"] = lambda: [
             self.next_garbage()]
         collect.pack()
-
+    
+    #Método para renderizar informações do caminhão
     def renderInfoTruck(self):
         self.titleFrame = Frame(master=root,
                            relief=RAISED,
@@ -259,9 +265,8 @@ class Application:
         unload["command"] = lambda: [self.caminhao.unload_truck()]
         unload.pack(side=LEFT)
 
+    #Método listar lixeiras
     def listTrash(self, trash):
-        print("trash", trash)
-        print("id", trash[0])
         self.frame.destroy()
         self.infoFrame.destroy()
         self.titleFrame.destroy()
@@ -278,26 +283,30 @@ class Application:
         self.exit["command"] = self.on_delete
         self.exit.pack()
 
+    #Método para coletar lixo de lixeira
     def collect_garbage(self, status):
         if status:
             try:
                 resp = self.caminhao.collect_garbage()
-                print(resp)
             except Exception as e:
                 self.alert("Não é possível fazer a coleta, pois o caminhão atingiu a capacidade máxima!")    
         else:
             self.alert("Lixeira bloqueada!")
 
+    #Método que exibe mensagem de erro
     def error(self, error):
         messagebox.showerror("Atenção", "Erro na comunicação! "+str(error))
 
+    #Método que exibe mensagem de alerta
     def alert(self, error):
         messagebox.showwarning("Title", str(error))
 
+    #Método para obter pŕoxima lixeira
     def next_garbage(self):
         trash = self.caminhao.next_garbage()
         self.listTrash(trash)
 
+    #Therad para atualizar informações do caminhão a cada 3s
     def thread_function(self):
         while True:
             try:
@@ -308,6 +317,7 @@ class Application:
                 self.error(e.args)
             time.sleep(3)
     
+    #Método chamado ao desconectar lixeira
     def on_delete(self):
         self.caminhao.delete()
         self.caminhao.disconnect()

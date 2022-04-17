@@ -6,6 +6,8 @@ import time
 
 
 class Application:
+    
+    #Constroi tela inicial
     def __init__(self, master=None):
         master.wm_protocol("WM_DELETE_WINDOW",self.on_delete)
 
@@ -134,9 +136,10 @@ class Application:
                 self.message["bg"] = "red"
         except Exception as e:
             self.error(e.args)
-            '''self.message["text"] = "Dados inválidos ".join(e.args)
-            self.message["bg"] = "red"'''
-
+            self.message["text"] = "Dados inválidos ".join(e.args)
+            self.message["bg"] = "red"
+    
+    #Método para renderizar informações da lixeira
     def createWindowsActions(self):
         self.destroyContainers()
         root.geometry("400x400+100+100")
@@ -236,6 +239,7 @@ class Application:
         self.exit["command"] = self.on_delete
         self.exit.pack()
 
+    #Método para destruir os containers
     def destroyContainers(self):
         self.primaryContainer.destroy()
         self.secondContainer.destroy()
@@ -245,6 +249,7 @@ class Application:
         self.sixthContainer.destroy()
         self.seventhContainer.destroy()
 
+    #Método para adicionar lixo a lixeira
     def adcTrash(self):
         try:
             if self.lixeira.get_state():
@@ -256,6 +261,7 @@ class Application:
         except Exception as e:
             self.alert("lixiera atingiu capacidade máxima!")
 
+    #Método para remover lixo de lixeira
     def removeTrash(self):
         if self.lixeira.get_state():
             self.lixeira.set_trash(-8)
@@ -264,6 +270,7 @@ class Application:
         else:
             self.alert("lixiera bloqueada!")
 
+    #Therad para atualizar informações da lixeira a cada 3s
     def thread_function(self):
         while True:
             try:
@@ -279,17 +286,19 @@ class Application:
                 self.error(e.args)
             time.sleep(3)
 
+    #Método que exibe mensagem de erro
     def error(self, error):
         messagebox.showerror("Atenção", "Erro na comunicação! "+str(error))
-
-    def alert(self, error):
-        messagebox.showwarning("Title", str(error))
     
+    #Método que exibe mensagem de alerta
+    def alert(self, error):
+        messagebox.showwarning("Atenção", str(error))
+    
+    #Método chamado ao desconectar lixeira
     def on_delete(self):
         self.lixeira.delete()
         self.lixeira.disconnect()
         root.destroy()
-
 
 root = Tk()
 root.title("Lixeira")
