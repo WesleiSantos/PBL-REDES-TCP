@@ -1,6 +1,6 @@
 import socket
 import json
-from services import Services
+from service import Services
 
 
 class Admin():
