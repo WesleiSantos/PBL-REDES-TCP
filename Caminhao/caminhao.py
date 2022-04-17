@@ -74,6 +74,9 @@ class Caminhao():
         self.trash = trash
         print("Trash status: ", response)
         return trash
+    
+    def disconnect(self):
+        self.service.close()
 
     def get_capacity(self):
         return self.__capacity

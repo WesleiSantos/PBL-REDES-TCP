@@ -9,6 +9,9 @@ class Services:
         self.mysocket = SocketClient(server_host, port)
         self.mysocket.start()
 
+    def close(self):
+        self.mysocket.close_connection()
+
     def GET(self, route, params):
         try:
             route = route + urlencode(params, doseq=True)

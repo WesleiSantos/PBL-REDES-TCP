@@ -8,6 +8,9 @@ class Services:
     def __init__(self, server_host, port):
         self.mysocket = SocketClient(server_host, port)
         self.mysocket.start()
+    
+    def close(self):
+        self.mysocket.close_connection()
 
     def GET(self, route, params):
         try:

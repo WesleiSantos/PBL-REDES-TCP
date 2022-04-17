@@ -41,6 +41,9 @@ class Lixeira():
                 self.__qtd_used = qtd_used
         else:
             raise "Error"
+    
+    def disconnect(self):
+        self.service.close()
 
     def get_trash(self):
         if self.__qtd_used > 0:

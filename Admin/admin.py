@@ -26,3 +26,6 @@ class Admin():
         response = self.service.GET("/list-truck?", data)
         print(response)
         return response
+        
+    def disconnect(self):
+        self.service.close()

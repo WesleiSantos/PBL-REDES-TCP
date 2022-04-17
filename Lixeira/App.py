@@ -287,6 +287,7 @@ class Application:
     
     def on_delete(self):
         self.lixeira.delete()
+        self.lixeira.disconnect()
         root.destroy()
 
 

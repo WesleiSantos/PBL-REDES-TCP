@@ -9,6 +9,8 @@ import time
 
 class Application:
     def __init__(self, master=None):
+        master.wm_protocol("WM_DELETE_WINDOW",self.on_delete)
+
         self.fontePadrao = ("Arial", "10")
 
         self.frameMaster = Frame(master)
@@ -225,7 +227,7 @@ class Application:
             self.exit["text"] = "Sair"
             self.exit["font"] = ("Calibri", "8")
             self.exit["width"] = 12
-            self.exit["command"] = lambda: [root.destroy()]
+            self.exit["command"] = self.on_delete
             self.exit.pack()
 
 
@@ -247,6 +249,10 @@ class Application:
     def alert(self, error):
         messagebox.showwarning("Title", str(error))
 
+    def on_delete(self):
+        self.admin.disconnect()
+        root.destroy()
+    
     def collect_garbage(self, coord):
         payload = json.dumps({"coord": coord})
         resp = self.admin.collect_garbage(payload)

@@ -310,6 +310,7 @@ class Application:
     
     def on_delete(self):
         self.caminhao.delete()
+        self.caminhao.disconnect()
         root.destroy()
 
 
