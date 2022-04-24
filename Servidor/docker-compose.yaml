@@ -1,0 +1,49 @@
+version: '3'  
+
+networks:
+  my-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.1.0/24 
+
+volumes:
+  mysql-vol:
+
+services:
+
+  appserver:
+    image: app-server
+    tty: true        # docker run -t
+    restart: on-failure
+    command: sh -c "sleep 11 && python /app/server.py"
+    build: 
+      context: .
+      dockerfile: Dockerfile.server
+    ports: 
+      - 9000:9000
+    networks:
+      my-network:
+        ipv4_address: 192.168.1.2
+    depends_on:
+      - "mysqldb"
+    
+  mysqldb:
+    image: mysql
+    build: 
+      context: .
+      dockerfile: Dockerfile.database
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    volumes: 
+      - "mysql-vol:/var/lib/mysql"
+    ports:
+      - 5000:3306
+    networks:
+        my-network: 
+          ipv4_address: 192.168.1.3
+    environment:
+      MYSQL_ROOT_PASSWORD: weslei200
+      MYSQL_DATABASE: Cidade_Inteligente
+  

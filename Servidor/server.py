@@ -102,10 +102,11 @@ class Server():
     def connect_mysql(self):
         try:
             db_connection = mysql.connector.connect(
-                host='localhost',
+                host="192.168.1.3",
+                port="3306",
                 user='root',
                 password='weslei200',
-                database='CIDADE_INTELIGENTE')
+                database='Cidade_Inteligente')
             print("Conectado a base de dados!")
             return db_connection
         except mysql.connector.Error as error:
@@ -117,6 +118,6 @@ class Server():
                 print(error)
 
 if __name__ == '__main__':
-    HOST = gethostname()
+    HOST = "192.168.1.2"
     serv = Server(HOST, 9000)
     serv.start()
