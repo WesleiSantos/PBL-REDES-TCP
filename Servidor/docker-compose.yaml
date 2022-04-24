@@ -17,7 +17,7 @@ services:
     image: app-server
     tty: true        # docker run -t
     restart: on-failure
-    command: sh -c "sleep 11 && python /app/server.py"
+    command: sh -c "sleep 20 && python /app/server.py"
     build: 
       context: .
       dockerfile: Dockerfile.server
