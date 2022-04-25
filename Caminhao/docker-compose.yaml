@@ -2,13 +2,13 @@ version: '3'
 
 services:
 
-  applixeira:
-    image: app-lixeira
+  appcaminhao:
+    image: app-caminhao
     tty: true        # docker run -t
     privileged: true
     build: 
       context: .
-      dockerfile: Dockerfile.lixeira
+      dockerfile: Dockerfile.caminhao
     environment:
       DISPLAY: ${DISPLAY}
     volumes:

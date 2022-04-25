@@ -2,13 +2,13 @@ version: '3'
 
 services:
 
-  applixeira:
-    image: app-lixeira
+  appadmin:
+    image: app-admin
     tty: true        # docker run -t
     privileged: true
     build: 
       context: .
-      dockerfile: Dockerfile.lixeira
+      dockerfile: Dockerfile.admin
     environment:
       DISPLAY: ${DISPLAY}
     volumes:
