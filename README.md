@@ -38,16 +38,16 @@ docker-compose down -v
 
 ## Lixeira
 -   Insira o host e porta do servidor e as cordenadas e capacidade de uso.
-### Função
+#### Função
 -   Colocar e retirar lixo.
 
 ## Caminhão
 -   Insira o host e porta do servidor e as cordenadas iniciais e capacidade de uso.
-### Função
+#### Função
 -   Coletar lixo.
 
 ## Admin
 -   Insira o host e porta do servidor.
-### Função
+#### Função
 -   Bloquear/liberar lixeiras, alterar ordem de coleta, acompanhar em tempo real.
 
