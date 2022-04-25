@@ -22,7 +22,7 @@ Para o container poder acessar a GUI, talvez seja necessário rodar o comando no
 
 Para criar a imagem e rodar o app é necessário acessar o diretório desejado e rodar o comando:
 -  docker-compose up --build
-exemplo:
+n\exemplo:
 ```
 cd Servidor
 docker-compose up --build
@@ -30,7 +30,7 @@ docker-compose up --build
 
 Para de excluir é necessário rodar o comando:
 -  docker-compose down -v
-exemplo:
+n\exemplo:
 ```
 cd Servidor
 docker-compose down -v
