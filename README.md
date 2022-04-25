@@ -17,7 +17,7 @@ Você pode acessar os arquivos do projeto clicando [aqui](https://github.com/Wes
 ### Setup
 Para instalar e configurar o docker no ubuntu acesse [aqui](https://docs.docker.com/engine/install/ubuntu/)
 
-Para poder o container poder acessar a GUI, talvez seja necessário rodar o comando
+Para o container poder acessar a GUI, talvez seja necessário rodar o comando
 -   xhost +
 
 Para criar a imagem e rodar o app é necessário acessar o diretório desejado e rodar o comando:
